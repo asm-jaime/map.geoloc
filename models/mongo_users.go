@@ -22,7 +22,7 @@ type DviUser struct {
 type DviUsers []DviUser
 
 func (this_user *DviUser) InsertDviUser() *conf.ApiError {
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	err := collection.Insert(this_user)
@@ -54,7 +54,7 @@ func MakeArrayUsers(num int) *DviEvents {
 
 func InsertDviUsers(this_users *DviUsers) *conf.ApiError {
 	var err error
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	for _, this_user := range *this_users {
@@ -68,7 +68,7 @@ func InsertDviUsers(this_users *DviUsers) *conf.ApiError {
 
 func UpdateUsersPosition(this_users *DviUsers) *conf.ApiError {
 	var err error
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	for _, this_user := range *this_users {

@@ -6,6 +6,7 @@
 # Folders
 _obj
 _test
+keys
 z_buffer
 # Architecture specific extensions/prefixes
 *.[568vq]

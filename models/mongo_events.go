@@ -34,7 +34,7 @@ type DviEvents []DviEvent
 
 func GetNEvents(num_scan int) ([]byte, *conf.ApiError) { // {{{
 	this_enents := new(DviEvents)
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	var erro error
 	if num_scan > 0 {
@@ -55,7 +55,7 @@ func GetNEvents(num_scan int) ([]byte, *conf.ApiError) { // {{{
 func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {{{
 	//this_enents := new(DviEvents)
 	var results []DviEvent
-	this_session := utils.NewDbSession()
+	this_session := utils.DbSession()
 	defer this_session.Close()
 	this_session.SetMode(mgo.Monotonic, true)
 	collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
@@ -83,7 +83,7 @@ func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {
 } // }}}
 
 func (this_event *DviEvent) InsertDviEvent() *conf.ApiError { // {{{
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	err := collection.Insert(this_event)
@@ -94,7 +94,7 @@ func (this_event *DviEvent) InsertDviEvent() *conf.ApiError { // {{{
 } // }}}
 
 func (this_event *DviEvent) Update() *conf.ApiError { // {{{
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	err := collection.UpdateId(this_event.Id, this_event)
@@ -106,7 +106,7 @@ func (this_event *DviEvent) Update() *conf.ApiError { // {{{
 
 func InsertDviEvents(this_events *DviEvents) *conf.ApiError {
 	var err error
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	for iterator, this_event := range *this_events {

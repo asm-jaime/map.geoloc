@@ -1,6 +1,8 @@
 package models
 
 import (
+	"os"
+
 	"dvij.geoloc/conf"
 	"dvij.geoloc/utils"
 	//"encoding/json"
@@ -11,6 +13,16 @@ import (
 	//"math/rand"
 	"time"
 )
+
+func DbSession() *mgo.Session {
+	this_config := conf.MgoConfig()
+	session, err := mgo.DialWithInfo(this_config)
+	if err != nil {
+		fmt.Print("error connect to DB")
+		os.Exit(1)
+	}
+	return session
+}
 
 func UpsertUserDataBase(username *string, password *string) { // {{{
 	//thisUser := &mgo.User{
@@ -30,7 +42,7 @@ func UpsertUserDataBase(username *string, password *string) { // {{{
 } // }}}
 
 func DropDataBase() *conf.ApiError { // {{{
-	this_session := utils.NewDbSession()
+	this_session := utils.DbSession()
 	defer this_session.Close()
 	err := this_session.DB(conf.MgoDatabase).DropDatabase()
 	if err != nil {
@@ -41,7 +53,7 @@ func DropDataBase() *conf.ApiError { // {{{
 
 func InitStructureDataBase() *conf.ApiError {
 	var err error
-	this_session := utils.NewDbSession()
+	this_session := utils.DbSession()
 	defer this_session.Close()
 	this_session.EnsureSafe(&mgo.Safe{})
 	collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
@@ -97,7 +109,7 @@ func InitStructureDataBase() *conf.ApiError {
 
 func StdFillDataBase(num int) *conf.ApiError {
 	var err error = nil
-	session := utils.NewDbSession()
+	session := utils.DbSession()
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	this_event := new(DviEvent)
@@ -118,7 +130,7 @@ func StdFillDataBase(num int) *conf.ApiError {
 }
 
 func MassiveFillDataBase(num int) *conf.ApiError { // {{{
-	//session := utils.NewDbSession()
+	//session := utils.DbSession()
 	//defer session.Close()
 	//collection := session.DB(conf.MgoDatabase).C("events")
 	this_event := new(DviEvent)
@@ -146,7 +158,7 @@ func MassiveFillDataBase(num int) *conf.ApiError { // {{{
 //func ()
 
 //func FixEnsureIndex() *conf.ApiError {
-//this_session := utils.NewDbSession()
+//this_session := utils.DbSession()
 //defer this_session.Close()
 //this_session.EnsureSafe(&mgo.Safe{})
 //collection := this_session.DB(conf.MgoDatabase).C("dvi_events")

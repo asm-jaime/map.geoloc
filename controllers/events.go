@@ -70,7 +70,7 @@ func TestInitStructureDataBase() {
 }
 
 func TestConnectDataBase() {
-	this_session := utils.NewDbSession()
+	this_session := utils.DbSession()
 	defer this_session.Close()
 	fmt.Print(this_session)
 }
