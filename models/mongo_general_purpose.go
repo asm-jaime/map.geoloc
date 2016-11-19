@@ -1,10 +1,11 @@
 package models
 
 import (
-	"dvijback/conf"
-	"dvijback/utils"
+	"dvij.geoloc/conf"
+	"dvij.geoloc/utils"
 	//"encoding/json"
 	"fmt"
+
 	"gopkg.in/mgo.v2"
 	//"gopkg.in/mgo.v2/bson"
 	//"math/rand"
@@ -31,9 +32,9 @@ func UpsertUserDataBase(username *string, password *string) { // {{{
 func DropDataBase() *conf.ApiError { // {{{
 	this_session := utils.NewDbSession()
 	defer this_session.Close()
-	err := this_session.DB(conf.ThisDatabase).DropDatabase()
+	err := this_session.DB(conf.MgoDatabase).DropDatabase()
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	return nil
 } // }}}
@@ -43,7 +44,7 @@ func InitStructureDataBase() *conf.ApiError {
 	this_session := utils.NewDbSession()
 	defer this_session.Close()
 	this_session.EnsureSafe(&mgo.Safe{})
-	collection := this_session.DB(conf.ThisDatabase).C("dvi_events")
+	collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
 	index := mgo.Index{
 		Key:        []string{"name", "description", "users"},
 		Unique:     false,
@@ -53,7 +54,7 @@ func InitStructureDataBase() *conf.ApiError {
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	index = mgo.Index{
 		Key:  []string{"$2dsphere:location"},
@@ -61,7 +62,7 @@ func InitStructureDataBase() *conf.ApiError {
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	index = mgo.Index{
 		Key:         []string{"ttl"},
@@ -69,9 +70,9 @@ func InitStructureDataBase() *conf.ApiError {
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
-	collection = this_session.DB(conf.ThisDatabase).C("dvi_users")
+	collection = this_session.DB(conf.MgoDatabase).C("dvi_users")
 	index = mgo.Index{
 		Key:        []string{"id", "name", "description"},
 		Unique:     true,
@@ -81,7 +82,7 @@ func InitStructureDataBase() *conf.ApiError {
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	index = mgo.Index{
 		Key:  []string{"$2dsphere:location"},
@@ -89,7 +90,7 @@ func InitStructureDataBase() *conf.ApiError {
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	return nil
 }
@@ -98,14 +99,14 @@ func StdFillDataBase(num int) *conf.ApiError {
 	var err error = nil
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_events")
+	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	this_event := new(DviEvent)
 	start := time.Now()
 	for i := 0; i < num; i++ {
 		this_event.SetStdParam()
 		err = collection.Insert(this_event)
 		if err != nil {
-			return conf.NewApiError(err)
+			return conf.ErrInvalidInsert
 		}
 	}
 	elapsed := time.Since(start)
@@ -119,7 +120,7 @@ func StdFillDataBase(num int) *conf.ApiError {
 func MassiveFillDataBase(num int) *conf.ApiError { // {{{
 	//session := utils.NewDbSession()
 	//defer session.Close()
-	//collection := session.DB(conf.ThisDatabase).C("events")
+	//collection := session.DB(conf.MgoDatabase).C("events")
 	this_event := new(DviEvent)
 	this_events := new(DviEvents)
 	start := time.Now()
@@ -148,7 +149,7 @@ func MassiveFillDataBase(num int) *conf.ApiError { // {{{
 //this_session := utils.NewDbSession()
 //defer this_session.Close()
 //this_session.EnsureSafe(&mgo.Safe{})
-//collection := this_session.DB(conf.ThisDatabase).C("dvi_events")
+//collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
 //index = mgo.Index{
 //Key:         []string{"expireAt"},
 //ExpireAfter: 10,

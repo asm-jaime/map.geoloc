@@ -9,14 +9,17 @@ import (
 	//"os"
 )
 
-// abstract
+// #################### abstract params section {{{
+
 const (
-	SITE_NAME      string = "dvij_geoloc"
-	DEFAULT_LIMIT  int    = 10
-	MAX_LIMIT      int    = 1000
-	MAX_POST_CHARS int    = 1000
-	MODE           string = "debug"
-	SERVER_PORT    string = "8080"
+	SiteName             string = "dvij_geoloc"
+	HostName             string = "localhost"
+	DefaultLimit         int    = 10
+	MaxLimits            int    = 1000
+	MaxPostChars         int    = 1000
+	Mode                 string = "debug"
+	HttpRouterServerPort string = "8080"
+	EchoServerPort       string = "8081"
 )
 
 // db
@@ -26,7 +29,25 @@ const (
 	IsDrop     bool = true
 )
 
-//MongoDB
+// #################### end of abstract section }}}
+
+// #################### cert params {{{
+const (
+	CertName string = "cert.pem"
+	KeyName  string = "key.pem"
+)
+
+// #################### cert params }}}
+
+// #################### tests params {{{
+const (
+	CountRndEvents int = 1000
+)
+
+// #################### end tests params }}}
+
+// #################### MongoDB section {{{
+
 //mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
 const (
 	MgoHost     string = "localhost:27017"
@@ -36,6 +57,26 @@ const (
 	MgoPassword string = "123456789"
 )
 
+// time live events
+const (
+	EventTTLAfterEnd time.Duration = 1 * time.Second
+	StdEventTTL      time.Duration = 20 * time.Minute
+)
+
+func MgoConfig() *mgo.DialInfo {
+	info := &mgo.DialInfo{
+		Addrs:    []string{MgoHost},
+		Timeout:  60 * time.Second,
+		Database: MgoDatabase,
+		Username: MgoUsername,
+		Password: MgoPassword,
+	}
+	return info
+}
+
+// #################### end MongoDB section }}}
+
+// #################### sql section {{{
 // db, err := sql.Open("postgres", "postgres://pqgotest:password@localhost/pqgotest?sslmode=verify-full")
 // dbname - The name of the database to connect to
 // user - The user to sign in as
@@ -60,28 +101,6 @@ const (
 	PsqlPassword string = "dviproject22"
 )
 
-// tests
-const (
-	CountRndEvents int = 1000
-)
-
-// time live events
-const (
-	EventTTLAfterEnd time.Duration = 1 * time.Second
-	StdEventTTL      time.Duration = 20 * time.Minute
-)
-
-func MgoConfig() *mgo.DialInfo {
-	info := &mgo.DialInfo{
-		Addrs:    []string{MgoHost},
-		Timeout:  60 * time.Second,
-		Database: MgoDatabase,
-		Username: MgoUsername,
-		Password: MgoPassword,
-	}
-	return info
-}
-
 func PsqlConfig() *pg.Options {
 	//pg.Options.
 	info := &pg.Options{
@@ -92,3 +111,5 @@ func PsqlConfig() *pg.Options {
 	}
 	return info
 }
+
+// #################### end sql section }}}

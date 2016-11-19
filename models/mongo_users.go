@@ -1,8 +1,8 @@
 package models
 
 import (
-	"dvijback/conf"
-	"dvijback/utils"
+	"dvij.geoloc/conf"
+	"dvij.geoloc/utils"
 	//"encoding/json"
 	//"fmt"
 	//"gopkg.in/mgo.v2"
@@ -24,10 +24,10 @@ type DviUsers []DviUser
 func (this_user *DviUser) InsertDviUser() *conf.ApiError {
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_users")
+	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	err := collection.Insert(this_user)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrInvalidInsert
 	}
 	return nil
 }
@@ -56,12 +56,12 @@ func InsertDviUsers(this_users *DviUsers) *conf.ApiError {
 	var err error
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_users")
+	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	for _, this_user := range *this_users {
 		err = collection.Insert(this_user)
 	}
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrInvalidInsert
 	}
 	return nil
 }
@@ -70,12 +70,12 @@ func UpdateUsersPosition(this_users *DviUsers) *conf.ApiError {
 	var err error
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_users")
+	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	for _, this_user := range *this_users {
 		err = collection.UpdateId(this_user.Id, this_user)
 	}
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrInvalidUpdate
 	}
 	return nil
 }

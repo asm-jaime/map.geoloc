@@ -1,8 +1,8 @@
 package controllers
 
 //import (
-//"dvijback/conf"
-//"dvijback/models"
+//"dvij.geoloc/conf"
+//"dvij.geoloc/models"
 //"fmt"
 //"net/http"
 //)

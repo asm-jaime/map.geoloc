@@ -1,10 +1,12 @@
 package models
 
 import (
-	"dvijback/conf"
-	"dvijback/utils"
 	"encoding/json"
 	"fmt"
+
+	"dvij.geoloc/conf"
+	"dvij.geoloc/utils"
+	// "fmt"
 	"math/rand"
 	"time"
 
@@ -36,16 +38,16 @@ func GetNEvents(num_scan int) ([]byte, *conf.ApiError) { // {{{
 	defer session.Close()
 	var erro error
 	if num_scan > 0 {
-		erro = session.DB(conf.ThisDatabase).C("dvi_events").Find(bson.M{}).SetMaxScan(num_scan).All(&this_enents)
+		erro = session.DB(conf.MgoDatabase).C("dvi_events").Find(bson.M{}).SetMaxScan(num_scan).All(&this_enents)
 	} else {
-		erro = session.DB(conf.ThisDatabase).C("dvi_events").Find(bson.M{}).All(&this_enents)
+		erro = session.DB(conf.MgoDatabase).C("dvi_events").Find(bson.M{}).All(&this_enents)
 	}
 	if erro != nil {
-		return nil, conf.NewApiError(erro)
+		return nil, conf.ErrDatabase
 	}
 	jsonBytes, err := json.Marshal(this_enents)
 	if err != nil {
-		return nil, conf.NewApiError(err)
+		return nil, conf.ErrJson
 	}
 	return jsonBytes, nil
 } // }}}
@@ -56,9 +58,9 @@ func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {
 	this_session := utils.NewDbSession()
 	defer this_session.Close()
 	this_session.SetMode(mgo.Monotonic, true)
-	collection := this_session.DB(conf.ThisDatabase).C("dvi_events")
+	collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
 	start := time.Now()
-	//err := this_session.DB(conf.ThisDatabase).C("events").Find(bson.M{}).All(this_enents)
+	//err := this_session.DB(conf.MgoDatabase).C("events").Find(bson.M{}).All(this_enents)
 	//{location: { $nearSphere: { $geometry: { type: "Point", coordinates: [50.5, 50.5], }, $maxDistance : 5000 } } }
 	err := collection.Find(bson.M{
 		"location": bson.M{
@@ -75,7 +77,7 @@ func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {
 	fmt.Print('\n' + elapsed)
 	fmt.Print(len(results))
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrInvalidFind
 	}
 	return nil
 } // }}}
@@ -83,10 +85,10 @@ func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {
 func (this_event *DviEvent) InsertDviEvent() *conf.ApiError { // {{{
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_events")
+	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	err := collection.Insert(this_event)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	return nil
 } // }}}
@@ -94,10 +96,10 @@ func (this_event *DviEvent) InsertDviEvent() *conf.ApiError { // {{{
 func (this_event *DviEvent) Update() *conf.ApiError { // {{{
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_events")
+	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	err := collection.UpdateId(this_event.Id, this_event)
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrDatabase
 	}
 	return nil
 } // }}}
@@ -106,7 +108,7 @@ func InsertDviEvents(this_events *DviEvents) *conf.ApiError {
 	var err error
 	session := utils.NewDbSession()
 	defer session.Close()
-	collection := session.DB(conf.ThisDatabase).C("dvi_events")
+	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	for iterator, this_event := range *this_events {
 		// type of i is int
 		// type of s is string
@@ -119,7 +121,7 @@ func InsertDviEvents(this_events *DviEvents) *conf.ApiError {
 	}
 
 	if err != nil {
-		return conf.NewApiError(err)
+		return conf.ErrInvalidInsert
 	}
 	return nil
 }

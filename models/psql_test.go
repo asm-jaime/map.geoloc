@@ -1,24 +1,20 @@
-package psql_test
+package models
 
 import (
-	"dvij_geoloc/conf"
 	"fmt"
-	"gopkg.in/pg.v4"
 	"testing"
+
+	"dvij.geoloc/conf"
+	"gopkg.in/pg.v4"
 )
 
-//type psqlTest{
-//}
-
-//(test *psqlTest)
-
 func TestConnect(t *testing.T) {
-	fmt.Print("start test connection to postgreSQL...\n")
+	fmt.Print("\nstart test connection to postgreSQL...\n")
 	this_config := conf.PsqlConfig()
 	db := pg.Connect(this_config)
 	err := db.Close()
 	if err != nil {
-            fmt.Print("error: ")
+		fmt.Print("error: ")
 		fmt.Println(err)
 	}
 }

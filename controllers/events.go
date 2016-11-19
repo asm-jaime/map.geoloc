@@ -1,11 +1,12 @@
 package controllers
 
 import (
-	"dvijback/conf"
-	"dvijback/models"
-	"dvijback/utils"
 	"fmt"
 	"net/http"
+
+	"dvij.geoloc/conf"
+	"dvij.geoloc/models"
+	"dvij.geoloc/utils"
 
 	"github.com/julienschmidt/httprouter"
 	//"time"
@@ -14,7 +15,7 @@ import (
 func GetNEvents(write http.ResponseWriter, req *http.Request) {
 	callback := req.FormValue("callback")
 	if callback != "" {
-		conf.Check(nil)
+		conf.NewEasyApiError(101, callback)
 	}
 	write.Header().Set("Content-Type", "application/json")
 	jsonBytes, err := models.GetNEvents(0)
