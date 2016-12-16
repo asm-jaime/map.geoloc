@@ -2,7 +2,6 @@ package models
 
 import (
 	"dvij.geoloc/conf"
-	"dvij.geoloc/utils"
 	//"encoding/json"
 	//"fmt"
 	//"gopkg.in/mgo.v2"
@@ -22,7 +21,10 @@ type DviUser struct {
 type DviUsers []DviUser
 
 func (this_user *DviUser) InsertDviUser() *conf.ApiError {
-	session := utils.DbSession()
+	session, api_error := DbSession(conf.MgoConfig())
+	if api_error != nil {
+		return api_error
+	}
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	err := collection.Insert(this_user)
@@ -54,7 +56,10 @@ func MakeArrayUsers(num int) *DviEvents {
 
 func InsertDviUsers(this_users *DviUsers) *conf.ApiError {
 	var err error
-	session := utils.DbSession()
+	session, api_error := DbSession(conf.MgoConfig())
+	if api_error != nil {
+		return api_error
+	}
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	for _, this_user := range *this_users {
@@ -68,7 +73,10 @@ func InsertDviUsers(this_users *DviUsers) *conf.ApiError {
 
 func UpdateUsersPosition(this_users *DviUsers) *conf.ApiError {
 	var err error
-	session := utils.DbSession()
+	session, api_error := DbSession(conf.MgoConfig())
+	if api_error != nil {
+		return api_error
+	}
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_users")
 	for _, this_user := range *this_users {

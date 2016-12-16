@@ -66,6 +66,7 @@ func (this_error *ApiError) Error() string {
 
 var (
 	ErrDatabase      = NewApiError(500, "database_error", "Database Error", "An unknown error occurred.", "")
+	ErrSession       = NewApiError(501, "invalid_session", "Invalid session", "An unknown error occurred.", "")
 	ErrInvalidSet    = NewApiError(404, "invalid_set", "Invalid Set", "The set you requested does not exist.", "")
 	ErrInvalidFind   = NewApiError(404, "invalid_find", "Invalid Find", "The find you requested does not exist.", "")
 	ErrInvalidInsert = NewApiError(404, "invalid_insert", "Invalid Insertion", "The insert you requested does not exist.", "")

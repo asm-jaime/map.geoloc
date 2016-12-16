@@ -1,10 +1,7 @@
 package models
 
 import (
-	"os"
-
 	"dvij.geoloc/conf"
-	"dvij.geoloc/utils"
 	//"encoding/json"
 	"fmt"
 
@@ -14,14 +11,12 @@ import (
 	"time"
 )
 
-func DbSession() *mgo.Session {
-	this_config := conf.MgoConfig()
+func DbSession(this_config *mgo.DialInfo) (*mgo.Session, *conf.ApiError) {
 	session, err := mgo.DialWithInfo(this_config)
 	if err != nil {
-		fmt.Print("error connect to DB")
-		os.Exit(1)
+		return session, conf.ErrSession
 	}
-	return session
+	return session, nil
 }
 
 func UpsertUserDataBase(username *string, password *string) { // {{{
@@ -42,7 +37,10 @@ func UpsertUserDataBase(username *string, password *string) { // {{{
 } // }}}
 
 func DropDataBase() *conf.ApiError { // {{{
-	this_session := utils.DbSession()
+	this_session, api_error := DbSession(conf.MgoConfig())
+	if api_error != nil {
+		return api_error
+	}
 	defer this_session.Close()
 	err := this_session.DB(conf.MgoDatabase).DropDatabase()
 	if err != nil {
@@ -53,7 +51,10 @@ func DropDataBase() *conf.ApiError { // {{{
 
 func InitStructureDataBase() *conf.ApiError {
 	var err error
-	this_session := utils.DbSession()
+	this_session, api_error := DbSession(conf.MgoConfig())
+	if api_error != nil {
+		return api_error
+	}
 	defer this_session.Close()
 	this_session.EnsureSafe(&mgo.Safe{})
 	collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
@@ -109,7 +110,10 @@ func InitStructureDataBase() *conf.ApiError {
 
 func StdFillDataBase(num int) *conf.ApiError {
 	var err error = nil
-	session := utils.DbSession()
+	session, api_error := DbSession(conf.MgoConfig())
+	if api_error != nil {
+		return api_error
+	}
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dvi_events")
 	this_event := new(DviEvent)
@@ -130,7 +134,7 @@ func StdFillDataBase(num int) *conf.ApiError {
 }
 
 func MassiveFillDataBase(num int) *conf.ApiError { // {{{
-	//session := utils.DbSession()
+	//session, api_error := DbSession(conf.MgoConfig()) if api_error != nil { return api_error }
 	//defer session.Close()
 	//collection := session.DB(conf.MgoDatabase).C("events")
 	this_event := new(DviEvent)
@@ -152,24 +156,3 @@ func MassiveFillDataBase(num int) *conf.ApiError { // {{{
 	//fmt.Print('\n' + elapsed)
 	return nil
 } // }}}
-
-//.insert({"createdAt": new Date(), "logEvent": 2, "logMessage": "Success!"})
-
-//func ()
-
-//func FixEnsureIndex() *conf.ApiError {
-//this_session := utils.DbSession()
-//defer this_session.Close()
-//this_session.EnsureSafe(&mgo.Safe{})
-//collection := this_session.DB(conf.MgoDatabase).C("dvi_events")
-//index = mgo.Index{
-//Key:         []string{"expireAt"},
-//ExpireAfter: 10,
-//}
-//err := collection.EnsureIndex(index)
-
-////mgo.Session.DB().C().EnsureIndexKey(
-//if err != nil {
-//return conf.NewApiError(err)
-//}
-//}

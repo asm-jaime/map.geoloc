@@ -6,7 +6,6 @@ import (
 
 	"dvij.geoloc/conf"
 	"dvij.geoloc/models"
-	"dvij.geoloc/utils"
 
 	"github.com/julienschmidt/httprouter"
 	//"time"
@@ -34,13 +33,8 @@ func TestMe() {
 	//TestConnectDataBase()
 }
 
-func TestMakeArrayEvents() {
-	this_array := models.MakeArrayEvents(24)
-	fmt.Print(this_array)
-}
-
 func TestInsertDviEvents() {
-	this_array := models.MakeArrayEvents(24)
+	this_array := models.MakeArrayEventsV1(24)
 	err := models.InsertDviEvents(this_array)
 	if err != nil {
 		fmt.Print(err.Error())
@@ -53,7 +47,7 @@ func TestMakeInterfaceEvents() {
 }
 
 func TestInsertArrayEvents() {
-	this_array := models.MakeArrayEvents(4)
+	this_array := models.MakeArrayEventsV1(4)
 	err := models.InsertArrayEvents(this_array)
 	if err != nil {
 		fmt.Print(err.Error())
@@ -70,7 +64,7 @@ func TestInitStructureDataBase() {
 }
 
 func TestConnectDataBase() {
-	this_session := utils.DbSession()
+	this_session := models.DbSession()
 	defer this_session.Close()
 	fmt.Print(this_session)
 }

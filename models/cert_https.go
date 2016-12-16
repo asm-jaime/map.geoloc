@@ -7,8 +7,8 @@ import (
 	"github.com/kabukky/httpscerts"
 )
 
-// If cert files are not available, generate new ones.
-func MakeHttpsCertV1(nameCert string, nameKey string, hostName string) *conf.ApiError {
+// MakeHTTPSCertV1 If cert files are not available, generate new ones.
+func MakeHTTPSCertV1(nameCert string, nameKey string, hostName string) *conf.ApiError {
 	err := httpscerts.Check(nameCert, nameKey)
 	if err != nil {
 		err = httpscerts.Generate(nameCert, nameKey, hostName)
