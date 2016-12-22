@@ -3,22 +3,25 @@ package controllers
 import (
 	"fmt"
 
-	"dvij.geoloc/conf"
 	"dvij.geoloc/models"
 	//"net/http"
 )
 
+// InitDataBase first time DB initialisation
 func InitDataBase() {
-	err := models.DropDataBase()
+	thisDB := new(models.DviMongoDB)
+
+	err := thisDB.Drop()
 	if err != nil {
 		fmt.Print(err)
 	}
-	err = models.InitStructureDataBase()
+
+	err = thisDB.Init()
 	if err != nil {
 		fmt.Print(err)
 	}
-	err = models.StdFillDataBase(conf.CountRndEvents)
-	fmt.Print(err)
+
+	err = thisDB.FillRnd(10)
 	if err != nil {
 		fmt.Print(err)
 	}

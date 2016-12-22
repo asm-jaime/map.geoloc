@@ -1,4 +1,4 @@
-package main
+package controllers
 
 type Hub struct {
 	//(Reg/Inbound)conn||(Reg/Unreh)gister

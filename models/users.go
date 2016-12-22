@@ -1,92 +1,117 @@
 package models
 
 import (
+	"sync"
+
 	"dvij.geoloc/conf"
 	//"encoding/json"
 	//"fmt"
 	//"gopkg.in/mgo.v2"
-	"math/rand"
-	"time"
 
 	"gopkg.in/mgo.v2/bson"
 )
 
+// DviUser structure for all data for the user
 type DviUser struct {
-	Id       bson.ObjectId `bson:"_id,omitempty"`
+	ID       bson.ObjectId `bson:"Id,omitempty"`
 	Username string        `bson:"name"`
 	Descr    string        `bson:"description"`
-	Location GeoJson       `bson:"location"`
+	Location GeoPoint      `bson:"location"`
 }
 
-type DviUsers []DviUser
+// DviUsers map for users
+type DviUsers struct {
+	Users map[string]DviUser `json:"users"`
+	sync.RWMutex
+}
 
-func (this_user *DviUser) InsertDviUser() *conf.ApiError {
-	session, api_error := DbSession(conf.MgoConfig())
-	if api_error != nil {
-		return api_error
+// NewUsers make new empty state for users
+func NewUsers() *DviUsers { // {{{
+	return &DviUsers{
+		Users: make(map[string]DviUser),
 	}
+} // }}}
+
+// InsertDviUser insert a user to db
+func (thisUser *DviUser) InsertDviUser() *conf.ApiError { // {{{
+	session, apiError := DbSession(conf.MgoConfig())
+	if apiError != nil {
+		return apiError
+	}
+
 	defer session.Close()
-	collection := session.DB(conf.MgoDatabase).C("dvi_users")
-	err := collection.Insert(this_user)
+	collection := session.DB(conf.MgoDatabase).C("dviUsers")
+	err := collection.Insert(thisUser)
 	if err != nil {
 		return conf.ErrInvalidInsert
 	}
 	return nil
-}
+} // }}}
 
-func (this_user *DviUser) SetStdParam() {
-	this_user.Id = bson.NewObjectId()
-	this_user.Username = "jhon doe"
-	this_user.Descr = "some descr"
-	this_user.Location.Type = "Point"
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	this_user.Location.Coordinates[0] = 50 + rnd.Float64()
-	this_user.Location.Coordinates[1] = 50 + rnd.Float64()
-}
+// SetRnd set standart params for the user
+func (thisUser *DviUser) SetRnd() { // {{{
+	thisUser.ID = bson.NewObjectId()
+	thisUser.Username = "jhon doe"
+	thisUser.Descr = "some descr"
+	// rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	thisUser.Location.SetRnd()
+} // }}}
 
-func MakeArrayUsers(num int) *DviEvents {
-	this_event := new(DviEvent)
-	this_events := new(DviEvents)
+// FillRnd make random users
+func (thisUsers *DviUsers) FillRnd(num int) { // {{{
+	thisUsers.Lock()
+	defer thisUsers.Unlock()
+
+	var thisID string
+	thisUsers = NewUsers()
+	thisUser := new(DviUser)
 	for i := 0; i < num; i++ {
-		this_event.SetStdParam()
-		*this_events = append(*this_events, *this_event)
+		thisUser.SetRnd()
+		thisID = thisUser.ID.String()
+		thisUsers.Users[thisID] = *thisUser
 	}
-	return this_events
-}
+} // }}}
 
-func InsertDviUsers(this_users *DviUsers) *conf.ApiError {
+// InsertDviUsers bulk insters users into db
+func (thisUsers *DviUsers) InsertDviUsers() *conf.ApiError { // {{{
+	thisUsers.Lock()
+	defer thisUsers.Unlock()
+
 	var err error
-	session, api_error := DbSession(conf.MgoConfig())
-	if api_error != nil {
-		return api_error
+
+	session, apiError := DbSession(conf.MgoConfig())
+	if apiError != nil {
+		return apiError
 	}
+
 	defer session.Close()
-	collection := session.DB(conf.MgoDatabase).C("dvi_users")
-	for _, this_user := range *this_users {
-		err = collection.Insert(this_user)
+	collection := session.DB(conf.MgoDatabase).C("dviUsers")
+	for _, thisUser := range thisUsers.Users {
+		err = collection.Insert(thisUser)
 	}
 	if err != nil {
 		return conf.ErrInvalidInsert
 	}
 	return nil
-}
+} // }}}
 
-func UpdateUsersPosition(this_users *DviUsers) *conf.ApiError {
+// UpdateUsersPosition update all points for users
+func (thisUsers *DviUsers) UpdateUsersPosition() *conf.ApiError { // {{{
+	thisUsers.Lock()
+	defer thisUsers.Unlock()
+
 	var err error
-	session, api_error := DbSession(conf.MgoConfig())
-	if api_error != nil {
-		return api_error
+	session, apiError := DbSession(conf.MgoConfig())
+	if apiError != nil {
+		return apiError
 	}
 	defer session.Close()
-	collection := session.DB(conf.MgoDatabase).C("dvi_users")
-	for _, this_user := range *this_users {
-		err = collection.UpdateId(this_user.Id, this_user)
+	collection := session.DB(conf.MgoDatabase).C("dviUsers")
+	for _, thisUser := range thisUsers.Users {
+		err = collection.UpdateId(thisUser.ID, thisUser)
 	}
 	if err != nil {
 		return conf.ErrInvalidUpdate
 	}
 	return nil
-}
-
-func UpdateUsers() {
-}
+} // }}}

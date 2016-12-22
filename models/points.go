@@ -15,15 +15,21 @@ var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 // GeoPoint for example {lat: 1.011111, lng: 1.0000450}
 type GeoPoint struct {
-	Type string  `json:"-"`
-	Lat  float64 `json:"lat"`
-	Lng  float64 `json:"lng"`
+	Type        string     `json:"-"`
+	Coordinates [2]float64 `json:"coordinates"`
 }
 
 // GeoState is map(array) of points
 type GeoState struct {
 	Location map[string]GeoPoint `json:"location"`
 	sync.RWMutex
+}
+
+// SetRnd set point to random data
+func (thisPoint *GeoPoint) SetRnd() {
+	thisPoint.Type = "Point"
+	thisPoint.Coordinates[0] = (rand.Float64() * 5) + 5
+	thisPoint.Coordinates[1] = (rand.Float64() * 5) + 5
 }
 
 func rndStr(n int) string { // {{{
@@ -52,6 +58,7 @@ func (thisGeost *GeoState) Add(thisToken string, thisPoint *GeoPoint) { // {{{
 func (thisGeost *GeoState) Clear() { // {{{
 	thisGeost.Lock()
 	defer thisGeost.Unlock()
+
 	thisGeost.Location = make(map[string]GeoPoint)
 } // }}}
 
@@ -66,15 +73,16 @@ func (thisGeost *GeoState) PrintPoints() { // {{{
 } // }}}
 
 // FillRnd fill GeoState the n points
-func (thisGeost *GeoState) FillRnd(n int) { // {{{
+func (thisGeost *GeoState) FillRnd(num int) { // {{{
 	thisGeost.Lock()
 	defer thisGeost.Unlock()
-	var thisToken string
-	for thisN := 0; thisN < n; thisN++ {
-		thisToken = rndStr(4)
-		thisGeost.Location[thisToken] = GeoPoint{
-			Lat: (rand.Float64() * 5) + 5,
-			Lng: (rand.Float64() * 5) + 5}
+
+	var thisID string
+	thisGeoPoint := new(GeoPoint)
+	for i := 0; i < num; i++ {
+		thisGeoPoint.SetRnd()
+		thisID = rndStr(8)
+		thisGeost.Location[thisID] = *thisGeoPoint
 	}
 } // }}}
 

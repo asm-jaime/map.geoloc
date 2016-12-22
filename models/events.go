@@ -1,11 +1,11 @@
 package models
 
 import (
-	"fmt"
+	"encoding/json"
 
 	"dvij.geoloc/conf"
 	// "fmt"
-	"math/rand"
+
 	"time"
 
 	"sync"
@@ -16,12 +16,12 @@ import (
 
 // DviEvent struct for processing events
 type DviEvent struct {
-	ID        bson.ObjectId       `bson:"Id,omitempty"`
-	Eventname string              `bson:"name"`
-	Descr     string              `bson:"description"`
-	Location  GeoPoint            `bson:"location"`
-	TTLEvent  time.Time           `bson:"ttl"`
-	Users     map[string]DviUsers `bson:"users"`
+	ID       bson.ObjectId   `bson:"Id,omitempty"`
+	Name     string          `bson:"name"`
+	Descript string          `bson:"description"`
+	Location GeoPoint        `bson:"location"`
+	TTLEvent time.Time       `bson:"ttl"`
+	Users    []bson.ObjectId `bson:"users"`
 }
 
 // DviEvents map for events
@@ -30,43 +30,63 @@ type DviEvents struct {
 	sync.RWMutex
 }
 
+// NewEvents make new empty state for events
+func NewEvents() *DviEvents { // {{{
+	return &DviEvents{
+		Events: make(map[string]DviEvent),
+	}
+} // }}}
+
 // GetNEvents set n events from db
-func (thisEvents *DviEvents) GetNEvents(numScan int) ([]byte, *conf.ApiError) { // {{{
+func (thisEvents *DviEvents) GetNEvents(numScan int) *conf.ApiError { // {{{
 	thisEvents.Lock()
 	defer thisEvents.Unlock()
 
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
-		return nil, apiError
+		return apiError
 	}
 	defer session.Close()
 
 	var erro error
 
 	if numScan > 0 {
-		erro = session.DB(conf.MgoDatabase).C("dviEvents").Find(bson.M{}).SetMaxScan(numScan).All(&thisEnents)
+		erro = session.DB(conf.MgoDatabase).C("dviEvents").Find(bson.M{}).SetMaxScan(numScan).All(&thisEvents)
 	} else {
-		erro = session.DB(conf.MgoDatabase).C("dviEvents").Find(bson.M{}).All(&thisEnents)
+		erro = session.DB(conf.MgoDatabase).C("dviEvents").Find(bson.M{}).All(&thisEvents)
 	}
 	if erro != nil {
-		return nil, conf.ErrDatabase
+		return conf.ErrDatabase
 	}
+	return nil
 } // }}}
 
-// GetGeoNearPoint return all points around scope
-func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {{{
-	//thisEnents := new(DviEvents)
-	var results []DviEvent
+// GetAsJSON set n events from db
+func (thisEvents *DviEvents) GetAsJSON() ([]byte, *conf.ApiError) { // {{{
+	thisEvents.Lock()
+	defer thisEvents.Unlock()
+	jsonBytes, err := json.Marshal(thisEvents)
+
+	if err != nil {
+		return nil, conf.ErrJson
+	}
+	return jsonBytes, nil
+} // }}}
+
+// GetEventsNearPoint return all points around scope
+func (thisEvents *DviEvents) GetEventsNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {{{
+	thisEvents.Lock()
+	defer thisEvents.Unlock()
+
 	thisSession, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
 	}
+
 	defer thisSession.Close()
 	thisSession.SetMode(mgo.Monotonic, true)
+
 	collection := thisSession.DB(conf.MgoDatabase).C("dviEvents")
-	start := time.Now()
-	//err := thisSession.DB(conf.MgoDatabase).C("events").Find(bson.M{}).All(thisEnents)
-	//{location: { $nearSphere: { $geometry: { type: "Point", coordinates: [50.5, 50.5], }, $maxDistance : 5000 } } }
 	err := collection.Find(bson.M{
 		"location": bson.M{
 			"$nearSphere": bson.M{
@@ -77,10 +97,7 @@ func GetGeoNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {
 				"$maxDistance": scope,
 			},
 		},
-	}).All(&results)
-	elapsed := time.Since(start)
-	fmt.Print('\n' + elapsed)
-	fmt.Print(len(results))
+	}).All(&thisEvents)
 	if err != nil {
 		return conf.ErrInvalidFind
 	}
@@ -118,22 +135,20 @@ func (thisEvent *DviEvent) Update() *conf.ApiError { // {{{
 } // }}}
 
 // InsertDviEvents bulk insert into db
-func InsertDviEvents(thisEvents *DviEvents) *conf.ApiError {
+func (thisEvents *DviEvents) InsertDviEvents() *conf.ApiError { // {{{
+	thisEvents.Lock()
+	defer thisEvents.Unlock()
+
 	var err error
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
 	}
+
 	defer session.Close()
 	collection := session.DB(conf.MgoDatabase).C("dviEvents")
-	for iterator, thisEvent := range *thisEvents {
-		// type of i is int
-		// type of s is string
-		// s == a[i]
-		fmt.Print("\n")
-		fmt.Print(iterator)
-		fmt.Print("\n")
-		fmt.Print(thisEvent)
+
+	for _, thisEvent := range (*thisEvents).Events {
 		err = collection.Insert(thisEvent)
 	}
 
@@ -141,11 +156,7 @@ func InsertDviEvents(thisEvents *DviEvents) *conf.ApiError {
 		return conf.ErrInvalidInsert
 	}
 	return nil
-}
-
-// UpdateTrack bulk insert events to db
-func UpdateTrack() {
-}
+} // }}}
 
 // SetTTLForAEvent set time alive for event
 func (thisEvent *DviEvent) SetTTLForAEvent() {
@@ -154,31 +165,37 @@ func (thisEvent *DviEvent) SetTTLForAEvent() {
 
 }
 
-// MakeArrayEventsV1 return random array
-func MakeArrayEventsV1(num int) *DviEvents {
-	thisEvent := new(DviEvent)
-	thisEvents := new(DviEvents)
-	for i := 0; i < num; i++ {
-		thisEvent.SetStdParam()
-		*thisEvents = append(*thisEvents, *thisEvent)
-	}
-	return thisEvents
-}
+// FillRnd fill rnd for this events
+func (thisEvents *DviEvents) FillRnd(num int) { // {{{
+	thisEvents.Lock()
+	defer thisEvents.Unlock()
 
-// SetStdParam set all random params for event
-func (thisEvent *DviEvent) SetStdParam() {
+	var thisID string
+	thisEvents = NewEvents()
+	thisEvent := new(DviEvent)
+	for i := 0; i < num; i++ {
+		thisEvent.SetRnd()
+		thisID = thisEvent.ID.String()
+		thisEvents.Events[thisID] = *thisEvent
+	}
+} // }}}
+
+// SetRnd set all random params for event
+func (thisEvent *DviEvent) SetRnd() { // {{{
 	thisEvent.ID = bson.NewObjectId()
-	thisEvent.Eventname = "some event"
-	thisEvent.Descr = "some descr"
-	thisEvent.Location.Type = "Point"
+	thisEvent.Name = "some event"
+	thisEvent.Descript = "some descr"
 	thisEvent.TTLEvent = time.Now().Add(conf.StdEventTTL)
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	thisEvent.Location.Coordinates[0] = 50 + rnd.Float64()
-	thisEvent.Location.Coordinates[1] = 50 + rnd.Float64()
-}
+	// rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
+	thisEvent.Location.SetRnd()
+} // }}}
 
 // InsertArrayEvents bulk insert events
-func InsertArrayEvents(thisEvents *DviEvents) *conf.ApiError {
+func (thisEvents *DviEvents) InsertArrayEvents() *conf.ApiError {
 	//fmt.Print(thisEvents...)
 	return nil
+}
+
+// UpdateTrack update position events to db
+func UpdateTrack() {
 }

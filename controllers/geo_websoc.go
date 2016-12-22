@@ -1,4 +1,4 @@
-package main
+package controllers
 
 import (
 	//"bytes"
@@ -34,89 +34,89 @@ var upgrader = websocket.Upgrader{
 
 // Conn is an middleman between the websocket connection and the hub.
 type Conn struct {
-	this_socket *websocket.Conn
+	thisSocket *websocket.Conn
 	// Buffered messages.
 	send chan []byte
 }
 
 // readPump pumps messages from the websocket connection to the hub.
-func (this_connection *Conn) readPump() {
+func (thisConnection *Conn) readPump() {
 	defer func() {
-		hub.unregister <- this_connection
-		this_connection.this_socket.Close()
+		hub.unregister <- thisConnection
+		thisConnection.thisSocket.Close()
 	}()
-	this_connection.this_socket.SetReadLimit(maxMessageSize)
-	this_connection.this_socket.SetReadDeadline(time.Now().Add(pongWait))
-	this_connection.this_socket.SetPongHandler(
+	thisConnection.thisSocket.SetReadLimit(maxMessageSize)
+	thisConnection.thisSocket.SetReadDeadline(time.Now().Add(pongWait))
+	thisConnection.thisSocket.SetPongHandler(
 		func(string) error {
-			this_connection.this_socket.SetReadDeadline(time.Now().Add(pongWait))
+			thisConnection.thisSocket.SetReadDeadline(time.Now().Add(pongWait))
 			return nil
 		})
 	for {
-		_, message, err := this_connection.this_socket.ReadMessage()
+		_, message, err := thisConnection.thisSocket.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		//some_state := new(GeoState)
-		this_state.AddFromJson(message)
-		//this_state.PrintPoints()
+		// thisPoint := new(models.GeoPoint)
+		// thisPoint.AddFromJSON(message)
+		//thisState.PrintPoints()
 		hub.broadcast <- message
 	}
 }
 
 // write writes a message with the given message type and payload.
-func (this_connection *Conn) write(mt int, payload []byte) error {
-	this_connection.this_socket.SetWriteDeadline(time.Now().Add(writeWait))
-	return this_connection.this_socket.WriteMessage(mt, payload)
+func (thisConnection *Conn) write(mt int, payload []byte) error {
+	thisConnection.thisSocket.SetWriteDeadline(time.Now().Add(writeWait))
+	return thisConnection.thisSocket.WriteMessage(mt, payload)
 }
 
 // writePump pumps messages from the hub to the websocket connection.
-func (this_connection *Conn) writePump() {
+func (thisConnection *Conn) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		this_connection.this_socket.Close()
+		thisConnection.thisSocket.Close()
 	}()
 	for {
 		select {
-		case message, ok := <-this_connection.send:
+		case message, ok := <-thisConnection.send:
 			if !ok {
-				this_connection.write(websocket.CloseMessage, []byte{})
+				thisConnection.write(websocket.CloseMessage, []byte{})
 				return
 			}
-			this_connection.this_socket.SetWriteDeadline(time.Now().Add(writeWait))
-			this_writer, err := this_connection.this_socket.NextWriter(websocket.TextMessage)
+			thisConnection.thisSocket.SetWriteDeadline(time.Now().Add(writeWait))
+			thisWriter, err := thisConnection.thisSocket.NextWriter(websocket.TextMessage)
 			if err != nil {
 				return
 			}
-			this_writer.Write(message)
+			thisWriter.Write(message)
 			// Add queued chat messages to the current websocket message.
-			n := len(this_connection.send)
+			n := len(thisConnection.send)
 			for i := 0; i < n; i++ {
-				this_writer.Write(newline)
-				this_writer.Write(<-this_connection.send)
+				thisWriter.Write(newline)
+				thisWriter.Write(<-thisConnection.send)
 			}
-			if err := this_writer.Close(); err != nil {
+			if err := thisWriter.Close(); err != nil {
 				return
 			}
 		case <-ticker.C:
-			if err := this_connection.write(websocket.PingMessage, []byte{}); err != nil {
+			if err := thisConnection.write(websocket.PingMessage, []byte{}); err != nil {
 				return
 			}
 		}
 	}
 }
 
-func serveWs(this_writer http.ResponseWriter, this_request *http.Request) {
-	this_socket, err := upgrader.Upgrade(this_writer, this_request, nil)
+func serveWs(thisWriter http.ResponseWriter, thisRequest *http.Request) {
+	thisSocket, err := upgrader.Upgrade(thisWriter, thisRequest, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	conn := &Conn{send: make(chan []byte, 256), this_socket: this_socket}
+	conn := &Conn{send: make(chan []byte, 256), thisSocket: thisSocket}
 	hub.register <- conn
 	go conn.writePump()
 	conn.readPump()
@@ -131,7 +131,7 @@ func serveWs(this_writer http.ResponseWriter, this_request *http.Request) {
 // )
 
 // var addr = flag.String("addr", ":8080", "http service address")
-// var this_state = NewGeoState()
+// var thisState = NewGeoState()
 
 // func main() {
 // go hub.run()

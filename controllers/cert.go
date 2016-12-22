@@ -7,9 +7,11 @@ import (
 	"dvij.geoloc/models"
 )
 
-func MakeHttpsCert() {
-	err := models.MakeHttpsCertV1(conf.CertName, conf.KeyName, conf.HostName)
+// MakeHTTPSCert will make cert with configs
+func MakeHTTPSCert() {
+	err := models.MakeHTTPSCertV1(conf.CertName, conf.KeyName, conf.HostName)
 	if err != nil {
-		fmt.Printf("\nerror, cant make a cert.. error %d\n", err)
+		fmt.Printf("\nerror, cant make a cert.. error \n")
+		fmt.Print(err)
 	}
 }

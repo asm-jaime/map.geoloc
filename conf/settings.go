@@ -10,6 +10,7 @@ import (
 
 // #################### abstract params section {{{
 
+// Sine ss
 const (
 	SiteName             string = "dvij_geoloc"
 	HostName             string = "localhost"
@@ -17,8 +18,9 @@ const (
 	MaxLimits            int    = 1000
 	MaxPostChars         int    = 1000
 	Mode                 string = "debug"
-	HttpRouterServerPort string = "8080"
+	HTTPRouterServerPort string = "8080"
 	EchoServerPort       string = "8081"
+	GinServerPort        string = "8080"
 )
 
 // db
@@ -62,6 +64,7 @@ const (
 	StdEventTTL      time.Duration = 20 * time.Minute
 )
 
+// MgoConfig return all data of config for connect to mongoDB
 func MgoConfig() *mgo.DialInfo {
 	info := &mgo.DialInfo{
 		Addrs:    []string{MgoHost},
