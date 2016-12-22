@@ -8,6 +8,11 @@ _obj
 _test
 keys
 z_buffer
+public
+
+# Build
+dvij.geoloc
+
 # Architecture specific extensions/prefixes
 *.[568vq]
 [568vq].out
