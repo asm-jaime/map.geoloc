@@ -3,6 +3,9 @@
 package models
 
 import (
+	"fmt"
+	"pulls/mgo/bson"
+
 	"dvij.geoloc/conf"
 	//"encoding/json"
 
@@ -13,6 +16,7 @@ import (
 
 // DviMongoDB interface for DataBase struct operations
 type DviMongoDB struct {
+	session *mgo.Session
 }
 
 // DbSession return session
@@ -25,7 +29,7 @@ func DbSession(thisConfig *mgo.DialInfo) (*mgo.Session, *conf.ApiError) { // {{{
 } // }}}
 
 // UpsertUser upser this user
-func (thisDB *DviMongoDB) UpsertUser(username *string, password *string) { // {{{
+func (mongodb *DviMongoDB) UpsertUser(username *string, password *string) { // {{{
 	//thisUser := &mgo.User{
 	//Username: conf.ThisUsername,
 	//Password: conf.ThisPassword,
@@ -43,7 +47,7 @@ func (thisDB *DviMongoDB) UpsertUser(username *string, password *string) { // {{
 } // }}}
 
 // Drop DataBase
-func (thisDB *DviMongoDB) Drop() *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) Drop() *conf.ApiError { // {{{
 	thisSession, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
@@ -59,7 +63,7 @@ func (thisDB *DviMongoDB) Drop() *conf.ApiError { // {{{
 } // }}}
 
 // Init DataBase structure, set user, password, tables, etc
-func (thisDB *DviMongoDB) Init() *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) Init() *conf.ApiError { // {{{
 	var err error
 	thisSession, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
@@ -119,7 +123,7 @@ func (thisDB *DviMongoDB) Init() *conf.ApiError { // {{{
 } // }}}
 
 // FillRndV1 fill all data with no DviEvents
-func (thisDB *DviMongoDB) FillRndV1(num int) *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) FillRndV1(num int) *conf.ApiError { // {{{
 	var err error
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
@@ -139,9 +143,43 @@ func (thisDB *DviMongoDB) FillRndV1(num int) *conf.ApiError { // {{{
 } // }}}
 
 // FillRnd with random data
-func (thisDB *DviMongoDB) FillRnd(num int) *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) FillRnd(num int) *conf.ApiError { // {{{
 	thisEvents := NewEvents()
 	thisEvents.FillRnd(10)
 	thisEvents.InsertDviEvents()
 	return nil
 } // }}}
+
+// SaveUser register a user so we know that we saw that user already.
+func (mongodb *DviMongoDB) SaveUser(user *DviUser) error {
+	mongodb.session = mongodb.GetSession()
+	defer mongodb.session.Close()
+	if _, err := mongodb.LoadUser(user.Email); err == nil {
+		return fmt.Errorf("User already exists!")
+	}
+	category := mongodb.session.DB("webadventure").C("users")
+	err := category.Insert(user)
+	return err
+}
+
+// LoadUser get data from a user.
+func (mongodb *DviMongoDB) LoadUser(Email string) (result DviUser, err error) {
+	mongodb.session = mongodb.GetSession()
+	defer mongodb.session.Close()
+	c := mongodb.session.DB("webadventure").C("users")
+	err = c.Find(bson.M{"email": Email}).One(&result)
+	return result, err
+}
+
+// GetSession return a new session if there is no previous one.
+func (mongodb *DviMongoDB) GetSession() *mgo.Session {
+	if mongodb.session != nil {
+		return mongodb.session.Copy()
+	}
+	session, err := mgo.Dial("localhost")
+	if err != nil {
+		panic(err)
+	}
+	session.SetMode(mgo.Monotonic, true)
+	return session
+}

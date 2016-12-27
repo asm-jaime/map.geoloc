@@ -15,6 +15,7 @@ import (
 type DviUser struct {
 	ID       bson.ObjectId `bson:"Id,omitempty"`
 	Username string        `bson:"name"`
+	Email    string        `bson:"email"`
 	Descr    string        `bson:"description"`
 	Location GeoPoint      `bson:"location"`
 }
