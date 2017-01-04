@@ -1,48 +1,13 @@
 package conf
 
-import (
-	// "fmt"
-	"fmt"
-	"net/http"
-	// "os"
-)
+// "fmt"
 
-// #################### http error {{{
-
-type ApiHttpError struct {
-	Code     int    `json:"errorCode"`
-	HttpCode int    `json:"-"`
-	Message  string `json:"errorMsg"`
-	Info     string `json:"errorInfo"`
-}
-
-func (thisError *ApiHttpError) Error() string {
-	return thisError.Message
-}
-
-func NewApiHttpError(thisError error) *ApiHttpError {
-	return &ApiHttpError{0, http.StatusInternalServerError, thisError.Error(), ""}
-}
-
-var ErrUserPassEmpty = &ApiHttpError{110, http.StatusBadRequest, "Password is empty", ""}
-var ErrUserNotFound = &ApiHttpError{123, http.StatusNotFound, "User not found", ""}
-var ErrUserIdEmpty = &ApiHttpError{130, http.StatusBadRequest, "Empty User Id", ""}
-var ErrUserIdWrong = &ApiHttpError{131, http.StatusBadRequest, "Wrong User Id", ""}
-
-// #################### http error }}}
+// "os"
 
 // #################### abstract error {{{
-// new
 
-type ApiErrors struct {
-	Errors []*ApiError `json:"errors"`
-}
-
-func (errors *ApiErrors) Status() int {
-	return errors.Errors[0].Status
-}
-
-type ApiError struct {
+// APIError structure for processing errors
+type APIError struct {
 	Status  int    `json:"status"`
 	Code    string `json:"code"`
 	Title   string `json:"title"`
@@ -50,8 +15,19 @@ type ApiError struct {
 	Href    string `json:"href"`
 }
 
-func NewApiError(status int, code string, title string, details string, href string) *ApiError {
-	return &ApiError{
+// APIErrors struct for map of errors
+type APIErrors struct {
+	Errors []*APIError `json:"errors"`
+}
+
+// Status get error status
+func (errors *APIErrors) Status() int {
+	return errors.Errors[0].Status
+}
+
+// NewAPIError make a info-struct error
+func NewAPIError(status int, code string, title string, details string, href string) *APIError {
+	return &APIError{
 		Status:  status,
 		Code:    code,
 		Title:   title,
@@ -60,58 +36,30 @@ func NewApiError(status int, code string, title string, details string, href str
 	}
 }
 
-func (thisError *ApiError) Error() string {
+func (thisError *APIError) Error() string {
 	return thisError.Title
 }
 
 var (
-	ErrDatabase      = NewApiError(500, "databaseError", "Database Error", "An unknown error occurred.", "")
-	ErrSession       = NewApiError(501, "invalidSession", "Invalid session", "An unknown error occurred.", "")
-	ErrInvalidSet    = NewApiError(404, "invalidSet", "Invalid Set", "The set you requested does not exist.", "")
-	ErrInvalidFind   = NewApiError(404, "invalidFind", "Invalid Find", "The find you requested does not exist.", "")
-	ErrInvalidInsert = NewApiError(404, "invalidInsert", "Invalid Insertion", "The insert you requested does not exist.", "")
-	ErrInvalidUpdate = NewApiError(404, "invalidUpdate", "Invalid Update", "The update you requested does not exist.", "")
-	ErrInvalidGroup  = NewApiError(404, "invalidGroup", "Invalid Group", "The group you requested does not exist.", "")
+	// ErrDatabase etc..
+	ErrDatabase = NewAPIError(500, "databaseError", "Database Error", "An unknown error occurred.", "")
+	// ErrSession ..
+	ErrSession = NewAPIError(501, "invalidSession", "Invalid session", "An unknown error occurred.", "")
+	// ErrInvalidSet ..
+	ErrInvalidSet = NewAPIError(404, "invalidSet", "Invalid Set", "The set you requested does not exist.", "")
+	// ErrInvalidFind ..
+	ErrInvalidFind = NewAPIError(404, "invalidFind", "Invalid Find", "The find you requested does not exist.", "")
+	// ErrInvalidInsert ..
+	ErrInvalidInsert = NewAPIError(404, "invalidInsert", "Invalid Insertion", "The insert you requested does not exist.", "")
+	// ErrInvalidUpdate ..
+	ErrInvalidUpdate = NewAPIError(404, "invalidUpdate", "Invalid Update", "The update you requested does not exist.", "")
+	// ErrInvalidGroup ..
+	ErrInvalidGroup = NewAPIError(404, "invalidGroup", "Invalid Group", "The group you requested does not exist.", "")
 
-	ErrHttpsCert = NewApiError(055, "certNotSuch", "Not such cert", "filest with cert does not exist.", "")
-	ErrJson      = NewApiError(100, "jsonError", "Json Error", "An unknown error of json.marshal.", "")
+	// ErrHTTPSCert ..
+	ErrHTTPSCert = NewAPIError(055, "certNotSuch", "Not such cert", "filest with cert does not exist.", "")
+	// ErrJSON ..
+	ErrJSON = NewAPIError(100, "jsonError", "Json Error", "An unknown error of json.marshal.", "")
 )
 
 // ==================== abstract error }}}
-
-// ==================== easy error {{{
-type EasyAPIError struct {
-	Errors []ErrorDetail `json:"errors"`
-}
-
-// ErrorDetail represents an individual item in an EasyAPIError.
-type ErrorDetail struct {
-	Message string `json:"message"`
-	Code    int    `json:"code"`
-}
-
-func NewEasyApiError(code int, message string) *ErrorDetail {
-	return &ErrorDetail{
-		Message: message,
-		Code:    code,
-	}
-}
-
-func (thisError EasyAPIError) Error() string {
-	if len(thisError.Errors) > 0 {
-		err := thisError.Errors[0]
-		return fmt.Sprintf("twitter: %d %v", err.Code, err.Message)
-	}
-	return ""
-}
-
-// Empty returns true if empty. Otherwise, at least 1 error message/code is
-// present and false is returned.
-func (thisError EasyAPIError) Empty() bool {
-	if len(thisError.Errors) == 0 {
-		return true
-	}
-	return false
-}
-
-// ==================== }}}

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"dvij.geoloc/models"
 
@@ -41,7 +42,8 @@ func init() { // {{{
 		ClientSecret: cred.Csecret,
 		RedirectURL:  "http://127.0.0.1:9090/auth",
 		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email", // You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
+			"https://www.googleapis.com/auth/userinfo.email",
+			// You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
 		},
 		Endpoint: google.Endpoint,
 	}
@@ -114,7 +116,13 @@ func LoginHandler(cont *gin.Context) { // {{{
 	session.Set("state", state)
 	session.Save()
 	link := getLoginURL(state)
-	cont.JSON(http.StatusOK, gin.H{"link": link})
+	cont.JSON(http.StatusOK, gin.H{
+		"client_id":    confTemp.ClientID,
+		"redirect_uri": confTemp.RedirectURL,
+		"scope":        strings.Join(confTemp.Scopes, " "),
+		"state":        state,
+		"link":         link,
+	})
 } // }}}
 
 // FieldHandler is a rudementary handler for logged in users.
