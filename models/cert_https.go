@@ -8,13 +8,13 @@ import (
 )
 
 // MakeHTTPSCertV1 If cert files are not available, generate new ones.
-func MakeHTTPSCertV1(nameCert string, nameKey string, hostName string) *conf.ApiError {
+func MakeHTTPSCertV1(nameCert string, nameKey string, hostName string) *conf.APIError {
 	err := httpscerts.Check(nameCert, nameKey)
 	if err != nil {
 		err = httpscerts.Generate(nameCert, nameKey, hostName)
 		if err != nil {
 			fmt.Print("Error: Couldn't create https certs.")
-			return conf.ErrHttpsCert
+			return conf.ErrHTTPSCert
 		}
 	}
 	return nil

@@ -38,7 +38,7 @@ func NewEvents() *DviEvents { // {{{
 } // }}}
 
 // GetNEvents set n events from db
-func (thisEvents *DviEvents) GetNEvents(numScan int) *conf.ApiError { // {{{
+func (thisEvents *DviEvents) GetNEvents(numScan int) *conf.APIError { // {{{
 	thisEvents.Lock()
 	defer thisEvents.Unlock()
 
@@ -62,19 +62,19 @@ func (thisEvents *DviEvents) GetNEvents(numScan int) *conf.ApiError { // {{{
 } // }}}
 
 // GetAsJSON set n events from db
-func (thisEvents *DviEvents) GetAsJSON() ([]byte, *conf.ApiError) { // {{{
+func (thisEvents *DviEvents) GetAsJSON() ([]byte, *conf.APIError) { // {{{
 	thisEvents.Lock()
 	defer thisEvents.Unlock()
 	jsonBytes, err := json.Marshal(thisEvents)
 
 	if err != nil {
-		return nil, conf.ErrJson
+		return nil, conf.ErrJSON
 	}
 	return jsonBytes, nil
 } // }}}
 
 // GetEventsNearPoint return all points around scope
-func (thisEvents *DviEvents) GetEventsNearPoint(long float64, lat float64, scope int) *conf.ApiError { // {{{
+func (thisEvents *DviEvents) GetEventsNearPoint(long float64, lat float64, scope int) *conf.APIError { // {{{
 	thisEvents.Lock()
 	defer thisEvents.Unlock()
 
@@ -105,7 +105,7 @@ func (thisEvents *DviEvents) GetEventsNearPoint(long float64, lat float64, scope
 } // }}}
 
 // InsertDviEvent insert thisEvent
-func (thisEvent *DviEvent) InsertDviEvent() *conf.ApiError { // {{{
+func (thisEvent *DviEvent) InsertDviEvent() *conf.APIError { // {{{
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
@@ -120,7 +120,7 @@ func (thisEvent *DviEvent) InsertDviEvent() *conf.ApiError { // {{{
 } // }}}
 
 // Update thisEvent
-func (thisEvent *DviEvent) Update() *conf.ApiError { // {{{
+func (thisEvent *DviEvent) Update() *conf.APIError { // {{{
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
@@ -135,7 +135,7 @@ func (thisEvent *DviEvent) Update() *conf.ApiError { // {{{
 } // }}}
 
 // InsertDviEvents bulk insert into db
-func (thisEvents *DviEvents) InsertDviEvents() *conf.ApiError { // {{{
+func (thisEvents *DviEvents) InsertDviEvents() *conf.APIError { // {{{
 	thisEvents.Lock()
 	defer thisEvents.Unlock()
 
@@ -191,7 +191,7 @@ func (thisEvent *DviEvent) SetRnd() { // {{{
 } // }}}
 
 // InsertArrayEvents bulk insert events
-func (thisEvents *DviEvents) InsertArrayEvents() *conf.ApiError {
+func (thisEvents *DviEvents) InsertArrayEvents() *conf.APIError {
 	//fmt.Print(thisEvents...)
 	return nil
 }

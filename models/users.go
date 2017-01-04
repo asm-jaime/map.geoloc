@@ -34,7 +34,7 @@ func NewUsers() *DviUsers { // {{{
 } // }}}
 
 // InsertDviUser insert a user to db
-func (thisUser *DviUser) InsertDviUser() *conf.ApiError { // {{{
+func (thisUser *DviUser) InsertDviUser() *conf.APIError { // {{{
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
@@ -74,7 +74,7 @@ func (thisUsers *DviUsers) FillRnd(num int) { // {{{
 } // }}}
 
 // InsertDviUsers bulk insters users into db
-func (thisUsers *DviUsers) InsertDviUsers() *conf.ApiError { // {{{
+func (thisUsers *DviUsers) InsertDviUsers() *conf.APIError { // {{{
 	thisUsers.Lock()
 	defer thisUsers.Unlock()
 
@@ -97,7 +97,7 @@ func (thisUsers *DviUsers) InsertDviUsers() *conf.ApiError { // {{{
 } // }}}
 
 // UpdateUsersPosition update all points for users
-func (thisUsers *DviUsers) UpdateUsersPosition() *conf.ApiError { // {{{
+func (thisUsers *DviUsers) UpdateUsersPosition() *conf.APIError { // {{{
 	thisUsers.Lock()
 	defer thisUsers.Unlock()
 

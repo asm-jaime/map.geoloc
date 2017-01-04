@@ -13,7 +13,7 @@ func GetNEvents(context *gin.Context) {
 	var err error
 	callback := context.Value("callback")
 	if callback != "" {
-		// conf.NewEasyApiError(101, callback)
+		// conf.NewEasyAPIError(101, callback)
 	}
 	context.Request.Header.Set("Content-Type", "application/json")
 

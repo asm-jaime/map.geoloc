@@ -20,7 +20,7 @@ type DviMongoDB struct {
 }
 
 // DbSession return session
-func DbSession(thisConfig *mgo.DialInfo) (*mgo.Session, *conf.ApiError) { // {{{
+func DbSession(thisConfig *mgo.DialInfo) (*mgo.Session, *conf.APIError) { // {{{
 	thisSession, err := mgo.DialWithInfo(thisConfig)
 	if err != nil {
 		return thisSession, conf.ErrSession
@@ -47,7 +47,7 @@ func (mongodb *DviMongoDB) UpsertUser(username *string, password *string) { // {
 } // }}}
 
 // Drop DataBase
-func (mongodb *DviMongoDB) Drop() *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) Drop() *conf.APIError { // {{{
 	thisSession, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
 		return apiError
@@ -63,7 +63,7 @@ func (mongodb *DviMongoDB) Drop() *conf.ApiError { // {{{
 } // }}}
 
 // Init DataBase structure, set user, password, tables, etc
-func (mongodb *DviMongoDB) Init() *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) Init() *conf.APIError { // {{{
 	var err error
 	thisSession, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
@@ -123,7 +123,7 @@ func (mongodb *DviMongoDB) Init() *conf.ApiError { // {{{
 } // }}}
 
 // FillRndV1 fill all data with no DviEvents
-func (mongodb *DviMongoDB) FillRndV1(num int) *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) FillRndV1(num int) *conf.APIError { // {{{
 	var err error
 	session, apiError := DbSession(conf.MgoConfig())
 	if apiError != nil {
@@ -143,7 +143,7 @@ func (mongodb *DviMongoDB) FillRndV1(num int) *conf.ApiError { // {{{
 } // }}}
 
 // FillRnd with random data
-func (mongodb *DviMongoDB) FillRnd(num int) *conf.ApiError { // {{{
+func (mongodb *DviMongoDB) FillRnd(num int) *conf.APIError { // {{{
 	thisEvents := NewEvents()
 	thisEvents.FillRnd(10)
 	thisEvents.InsertDviEvents()
