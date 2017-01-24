@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -30,7 +31,7 @@ func getLoginURL(state string) string { // {{{
 } // }}}
 
 func init() { // {{{
-	file, err := ioutil.ReadFile("keys/google_key.json")
+	file, err := ioutil.ReadFile("keys/clientid.google.json")
 	if err != nil {
 		log.Printf("File error: %v\n", err)
 		os.Exit(1)
@@ -40,7 +41,7 @@ func init() { // {{{
 	confTemp = &oauth2.Config{
 		ClientID:     cred.Cid,
 		ClientSecret: cred.Csecret,
-		RedirectURL:  "http://127.0.0.1:9090/auth",
+		RedirectURL:  "http://localhost:8080/auth",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			// You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
@@ -53,9 +54,14 @@ func init() { // {{{
 func AuthHandler(cont *gin.Context) { // {{{
 	// Handle the exchange code to initiate a transport.
 	session := sessions.Default(cont)
-
 	retrievedState := session.Get("state")
 	queryState := cont.Request.URL.Query().Get("state")
+	fmt.Print("retrievedState:\n")
+	fmt.Print(retrievedState)
+	fmt.Print("\nqueryState:\n")
+	fmt.Print(queryState)
+	fmt.Print("\n")
+
 	if retrievedState != queryState {
 		log.Printf("Invalid session state: retrieved: %s; Param: %s", retrievedState, queryState)
 		cont.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid session state."})
@@ -90,10 +96,10 @@ func AuthHandler(cont *gin.Context) { // {{{
 	session.Set("user-id", user.Email)
 	err = session.Save()
 	if err != nil {
-		log.Println(err)
 		cont.JSON(http.StatusBadRequest, gin.H{"message": "Error while saving session. Please try again."})
 		return
 	}
+	log.Println(err)
 	seen := false
 	db := models.DviMongoDB{}
 	if _, mongoErr := db.LoadUser(user.Email); mongoErr == nil {
@@ -111,12 +117,17 @@ func AuthHandler(cont *gin.Context) { // {{{
 
 // LoginHandler handles the login procedure.
 func LoginHandler(cont *gin.Context) { // {{{
+
+	// session
 	state := models.RandToken(32)
 	session := sessions.Default(cont)
 	session.Set("state", state)
 	session.Save()
+
+	// response
 	link := getLoginURL(state)
 	cont.JSON(http.StatusOK, gin.H{
+		"auth_url":     confTemp.Endpoint.AuthURL,
 		"client_id":    confTemp.ClientID,
 		"redirect_uri": confTemp.RedirectURL,
 		"scope":        strings.Join(confTemp.Scopes, " "),

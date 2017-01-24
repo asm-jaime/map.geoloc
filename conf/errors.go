@@ -4,8 +4,6 @@ package conf
 
 // "os"
 
-// #################### abstract error {{{
-
 // APIError structure for processing errors
 type APIError struct {
 	Status  int    `json:"status"`
@@ -61,5 +59,3 @@ var (
 	// ErrJSON ..
 	ErrJSON = NewAPIError(100, "jsonError", "Json Error", "An unknown error of json.marshal.", "")
 )
-
-// ==================== abstract error }}}
