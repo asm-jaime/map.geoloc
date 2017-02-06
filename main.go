@@ -1,13 +1,58 @@
 package main
 
 import (
-	"dvij.geoloc/conf"
+	"fmt"
+
+	"os"
+
 	"dvij.geoloc/controllers"
 )
 
 func main() {
-	thisServer := new(controllers.Server)
-	thisServer.NewEngine(conf.GinServerPort)
-	// go controllers.MakeHttpRouterServer(conf.HttpRouterServerPort)
-	// controllers.MakeEchoServerV1(conf.EchoServerPort)
+	// processing console arguments
+	args := os.Args
+	if (len(args) > 2) && args[1] == "start" {
+		startServer(args)
+	} else if len(args) == 3 && args[1] == "help" {
+		printCommandsHelp(args[2])
+	} else if len(args) == 2 && args[1] == "help" {
+		printFullHelp()
+	} else {
+		incorrectCommand()
+	}
+}
+
+func incorrectCommand() {
+	fmt.Println("---------------")
+	fmt.Println("ERROR")
+	fmt.Println("Incorrect command")
+	fmt.Println("For help run \"./dvij.geoloc help\"")
+	fmt.Println("---------------")
+}
+
+func printFullHelp() {
+	//
+}
+
+func printCommandsHelp(command string) {
+	switch command {
+	case "start":
+	default:
+		fmt.Println("---------------")
+		fmt.Println("ERROR")
+		fmt.Println("Incorrect command")
+		fmt.Println("---------------")
+	}
+}
+
+func startServer(args []string) {
+	switch args[2] {
+	case "std":
+		controllers.Start(args)
+	default:
+		fmt.Println("---------------")
+		fmt.Println("ERROR")
+		fmt.Println("Incorrect command")
+		fmt.Println("---------------")
+	}
 }

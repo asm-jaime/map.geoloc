@@ -2,18 +2,81 @@ package conf
 
 import (
 	//"errors"
+	"encoding/json"
+	"io/ioutil"
 	"time"
 
 	"gopkg.in/mgo.v2"
 	//"os"
 )
 
-// #################### abstract params section {{{
+// ========== server params {{{
+
+// ServerConfig can be set from command line
+type ServerConfig struct {
+	Host         string
+	Port         string
+	IsProduction bool
+}
+
+var DefaultServerConfig *ServerConfig = &ServerConfig{
+	Host:         "localhost",
+	Port:         "8080",
+	IsProduction: false,
+}
+
+func (config *ServerConfig) SetConfig() {
+	config.Host = DefaultServerConfig.Host
+	config.Port = DefaultServerConfig.Port
+	config.IsProduction = DefaultServerConfig.IsProduction
+}
+
+// ========== server params }}}
+
+// ========== keys {{{
+// KeysConfig all keys for any services (pimary google/twitter/vk/..)
+type KeysConfig struct {
+	Cid     string `json:"cid"`
+	Csecret string `json:"csecret"`
+}
+
+var DefaultKeysConfig *KeysConfig = &KeysConfig{
+	Cid:     "295529031882-ap6njd8e8p0bmggmvkb7t0iflhcetjn1.apps.googleusercontent.com",
+	Csecret: "ICiVhKO51UxbNfIQVR7WudxH",
+}
+
+const KeysConfigFile string = "keys/clientid.google.json"
+
+func (config *KeysConfig) SetConfig() *APIError {
+	file, err := ioutil.ReadFile(KeysConfigFile)
+	if err != nil {
+		config.Cid = DefaultKeysConfig.Cid
+		config.Csecret = DefaultKeysConfig.Csecret
+		return NewAPIError(err)
+	}
+
+	err = json.Unmarshal(file, &config)
+	if err != nil {
+		config.Cid = DefaultKeysConfig.Cid
+		config.Csecret = DefaultKeysConfig.Csecret
+		return NewAPIError(err)
+	}
+	return NewAPIError(err)
+}
+
+// ========== keys }}}
+
+// ========== cert params {{{
+const (
+	CertName string = "cert.pem"
+	KeyName  string = "key.pem"
+)
+
+// ========== cert params }}}
 
 // Sine ss
 const (
-	SiteName             string = "dvij_geoloc"
-	HostName             string = "localhost"
+	SiteName             string = "geoloc"
 	DefaultLimit         int    = 10
 	MaxLimits            int    = 1000
 	MaxPostChars         int    = 1000
@@ -23,31 +86,21 @@ const (
 	GinServerPort        string = "8080"
 )
 
+// ========== tests params {{{
+const (
+	CountRndEvents int = 1000
+)
+
+// ========== end tests params }}}
+
+// ========== MongoDB section {{{
+
 // db
 const (
 	mongoDB    bool = false
 	postgreSQL bool = true
 	IsDrop     bool = true
 )
-
-// #################### end of abstract section }}}
-
-// #################### cert params {{{
-const (
-	CertName string = "cert.pem"
-	KeyName  string = "key.pem"
-)
-
-// #################### cert params }}}
-
-// #################### tests params {{{
-const (
-	CountRndEvents int = 1000
-)
-
-// #################### end tests params }}}
-
-// #################### MongoDB section {{{
 
 //mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
 const (
@@ -76,4 +129,4 @@ func MgoConfig() *mgo.DialInfo {
 	return info
 }
 
-// #################### end MongoDB section }}}
+// ========== end MongoDB section }}}

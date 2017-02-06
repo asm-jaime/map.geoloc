@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"dvij.geoloc/models"
@@ -14,45 +13,14 @@ import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
-
-var cred Credentials
-var confTemp *oauth2.Config
-
-// Credentials which stores google ids.
-type Credentials struct {
-	Cid     string `json:"cid"`
-	Csecret string `json:"csecret"`
-}
 
 func getLoginURL(state string) string { // {{{
 	return confTemp.AuthCodeURL(state)
 } // }}}
 
-func init() { // {{{
-	file, err := ioutil.ReadFile("keys/clientid.google.json")
-	if err != nil {
-		log.Printf("File error: %v\n", err)
-		os.Exit(1)
-	}
-	json.Unmarshal(file, &cred)
-
-	confTemp = &oauth2.Config{
-		ClientID:     cred.Cid,
-		ClientSecret: cred.Csecret,
-		RedirectURL:  "http://localhost:8080/auth",
-		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			// You have to select your own scope from here -> https://developers.google.com/identity/protocols/googlescopes#google_sign-in
-		},
-		Endpoint: google.Endpoint,
-	}
-} // }}}
-
-// AuthHandler handles authentication of a user and initiates a session.
-func AuthHandler(cont *gin.Context) { // {{{
-	// Handle the exchange code to initiate a transport.
+// AuthHandler handles authentication of a user and initiates a session {{{
+func AuthHandler(cont *gin.Context) {
 	session := sessions.Default(cont)
 	retrievedState := session.Get("state")
 	queryState := cont.Request.URL.Query().Get("state")
@@ -100,6 +68,7 @@ func AuthHandler(cont *gin.Context) { // {{{
 		return
 	}
 	log.Println(err)
+
 	seen := false
 	db := models.DviMongoDB{}
 	if _, mongoErr := db.LoadUser(user.Email); mongoErr == nil {
@@ -112,12 +81,12 @@ func AuthHandler(cont *gin.Context) { // {{{
 			return
 		}
 	}
+
 	cont.JSON(http.StatusOK, gin.H{"email": user.Email, "seen": seen})
 } // }}}
 
-// LoginHandler handles the login procedure.
-func LoginHandler(cont *gin.Context) { // {{{
-
+// LoginHandler handles the login procedure {{{
+func LoginHandler(cont *gin.Context) {
 	// session
 	state := models.RandToken(32)
 	session := sessions.Default(cont)
@@ -136,8 +105,8 @@ func LoginHandler(cont *gin.Context) { // {{{
 	})
 } // }}}
 
-// FieldHandler is a rudementary handler for logged in users.
-func FieldHandler(cont *gin.Context) { // {{{
+// FieldHandler is a rudementary handler for logged in users {{{
+func FieldHandler(cont *gin.Context) {
 	session := sessions.Default(cont)
 	userID := session.Get("user-id")
 	cont.JSON(http.StatusOK, gin.H{"user": userID})

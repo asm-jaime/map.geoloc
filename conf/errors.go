@@ -1,61 +1,47 @@
 package conf
 
-// "fmt"
-
-// "os"
+import (
+	"fmt"
+	"net/http"
+	// "os"
+)
 
 // APIError structure for processing errors
 type APIError struct {
-	Status  int    `json:"status"`
-	Code    string `json:"code"`
-	Title   string `json:"title"`
-	Details string `json:"details"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 	Href    string `json:"href"`
 }
 
-// APIErrors struct for map of errors
-type APIErrors struct {
-	Errors []*APIError `json:"errors"`
-}
-
-// Status get error status
-func (errors *APIErrors) Status() int {
-	return errors.Errors[0].Status
-}
-
-// NewAPIError make a info-struct error
-func NewAPIError(status int, code string, title string, details string, href string) *APIError {
-	return &APIError{
-		Status:  status,
-		Code:    code,
-		Title:   title,
-		Details: details,
-		Href:    href,
+// NewAPIError
+func NewAPIError(err error) *APIError {
+	if err == nil {
+		return ErrNoError
+	} else {
+		return &APIError{http.StatusInternalServerError, err.Error(), ""}
 	}
 }
 
-func (thisError *APIError) Error() string {
-	return thisError.Title
+func (err *APIError) Error() string {
+	return err.Message
+}
+
+func (err *APIError) PrintError() {
+	fmt.Printf("\ncode: %d, %s", err.Code, err.Message)
+	if err.Href != "" {
+		fmt.Print(err.Href)
+	}
 }
 
 var (
-	// ErrDatabase etc..
-	ErrDatabase = NewAPIError(500, "databaseError", "Database Error", "An unknown error occurred.", "")
-	// ErrSession ..
-	ErrSession = NewAPIError(501, "invalidSession", "Invalid session", "An unknown error occurred.", "")
-	// ErrInvalidSet ..
-	ErrInvalidSet = NewAPIError(404, "invalidSet", "Invalid Set", "The set you requested does not exist.", "")
-	// ErrInvalidFind ..
-	ErrInvalidFind = NewAPIError(404, "invalidFind", "Invalid Find", "The find you requested does not exist.", "")
-	// ErrInvalidInsert ..
-	ErrInvalidInsert = NewAPIError(404, "invalidInsert", "Invalid Insertion", "The insert you requested does not exist.", "")
-	// ErrInvalidUpdate ..
-	ErrInvalidUpdate = NewAPIError(404, "invalidUpdate", "Invalid Update", "The update you requested does not exist.", "")
-	// ErrInvalidGroup ..
-	ErrInvalidGroup = NewAPIError(404, "invalidGroup", "Invalid Group", "The group you requested does not exist.", "")
-
-	// ErrHTTPSCert ..
-	ErrHTTPSCert = NewAPIError(055, "certNotSuch", "Not such cert", "filest with cert does not exist.", "")
-	// ErrJSON ..
-	ErrJSON = NewAPIError(100, "jsonError", "Json Error", "An unknown error of json.marshal.", "")
+	ErrNoError       = &APIError{0, "No error.", ""}
+	ErrDatabase      = &APIError{http.StatusInternalServerError, "An unknown error occurred.", ""}
+	ErrSession       = &APIError{http.StatusInternalServerError, "An unknown error occurred.", ""}
+	ErrInvalidSet    = &APIError{http.StatusInternalServerError, "The set you requested does not exist.", ""}
+	ErrInvalidFind   = &APIError{http.StatusInternalServerError, "The find you requested does not exist.", ""}
+	ErrInvalidInsert = &APIError{http.StatusInternalServerError, "The insert you requested does not exist.", ""}
+	ErrInvalidUpdate = &APIError{http.StatusInternalServerError, "The update you requested does not exist.", ""}
+	ErrInvalidGroup  = &APIError{http.StatusInternalServerError, "The group you requested does not exist.", ""}
+	ErrHTTPSCert     = &APIError{http.StatusInternalServerError, "filest with cert does not exist.", ""}
+	ErrJSON          = &APIError{http.StatusInternalServerError, "An unknown error of json.marshal.", ""}
 )

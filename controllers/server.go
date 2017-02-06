@@ -2,7 +2,12 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
 
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+
+	"dvij.geoloc/conf"
 	"dvij.geoloc/models"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/contrib/static"
@@ -12,19 +17,29 @@ import (
 // Server for you
 type Server struct{}
 
+var confTemp *oauth2.Config
+
 func testData(cont *gin.Context) {
 	cont.JSON(200, gin.H{"message: ": "test data"})
+}
+
+// ========== middlevares {{{
+// AuthorizeRequest is used to authorize a request for a certain end-point group.
+func AuthorizeRequest() gin.HandlerFunc {
+	return func(thisContext *gin.Context) {
+		session := sessions.Default(thisContext)
+		v := session.Get("user-id")
+		if v == nil {
+			thisContext.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+			thisContext.Abort()
+		}
+		thisContext.Next()
+	}
 }
 
 // CORSMiddleware middleware witch headers for any RESTful requests
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		// old version headers (but work)
-		// cont.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		// cont.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-		// cont.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE, UPDATE")
@@ -41,8 +56,10 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-// NewEngine return the new gin server
-func (server *Server) NewEngine(thisPort string) {
+// ========== middlevares }}}
+
+// NewEngine return the new gin server {{{
+func (server *Server) NewEngine(port string) {
 	router := gin.Default()
 
 	// support sessions
@@ -51,6 +68,7 @@ func (server *Server) NewEngine(thisPort string) {
 		Path:   "/",
 		MaxAge: 86400 * 7,
 	})
+
 	// router
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
@@ -72,6 +90,47 @@ func (server *Server) NewEngine(thisPort string) {
 		authorized.GET("/test", testData)
 	}
 
-	router.Run(":" + thisPort)
+	router.Run(":" + port)
+} // }}}
 
+func Start(args []string) {
+	// init server config
+	server := conf.ServerConfig{}
+	server.SetConfig()
+
+	// init oauth keys
+	cred := conf.KeysConfig{}
+	err := cred.SetConfig()
+	if err.Code != 0 {
+		fmt.Print(err.Error())
+	}
+
+	// processing console arguments
+	if len(args) > 3 { // set port
+		server.Port = args[3]
+	} else if len(args) > 4 { // set host
+		server.Host = args[4]
+	}
+
+	// init oauth config
+	confTemp = &oauth2.Config{
+		ClientID:     cred.Cid,
+		ClientSecret: cred.Csecret,
+		RedirectURL:  "http://" + server.Host + ":" + server.Port + "/auth",
+		Scopes: []string{
+			"https://www.googleapis.com/auth/userinfo.email",
+			// your own scope: https://developers.google.com/identity/protocols/googlescopes#google_sign-in
+		},
+		Endpoint: google.Endpoint,
+	}
+
+	// info
+	fmt.Println("---------------")
+	fmt.Println("Selected port: " + server.Port)
+	fmt.Println("Selected host: " + server.Host)
+	fmt.Println("---------------")
+
+	// star server
+	thisServer := new(Server)
+	thisServer.NewEngine(server.Port)
 }
