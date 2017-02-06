@@ -13,5 +13,5 @@
   "csecret": "ICiVhKO51UxbNfIQVR7WudxH"
   }
   ```
-  * `go run main.go`
-  * `http://0.0.0.0:8080/login` for test.
+  * `go run main.go start std`
+  * `http://localhost:8080`
