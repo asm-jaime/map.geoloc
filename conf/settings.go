@@ -2,6 +2,7 @@ package conf
 
 import (
 	//"errors"
+	"Backlun/back/conf"
 	"encoding/json"
 	"io/ioutil"
 	"time"
@@ -17,52 +18,58 @@ type ServerConfig struct {
 	Host         string
 	Port         string
 	IsProduction bool
-}
-
-var DefaultServerConfig *ServerConfig = &ServerConfig{
-	Host:         "localhost",
-	Port:         "8080",
-	IsProduction: false,
+	KeyFile      string
+	Cred         Credentials
 }
 
 func (config *ServerConfig) SetConfig() {
-	config.Host = DefaultServerConfig.Host
-	config.Port = DefaultServerConfig.Port
-	config.IsProduction = DefaultServerConfig.IsProduction
+	config.Host = "localhost"
+	config.Port = "8080"
+	config.IsProduction = false
+	config.Cred.Cid = "295529031882-ap6njd8e8p0bmggmvkb7t0iflhcetjn1.apps.googleusercontent.com"
+	config.Cred.Csecret = "ICiVhKO51UxbNfIQVR7WudxH"
+	config.KeyFile = "keys/clientid.google.json"
 }
 
 // ========== server params }}}
 
 // ========== keys {{{
-// KeysConfig all keys for any services (pimary google/twitter/vk/..)
-type KeysConfig struct {
+
+// Credentials stored a google cred.
+type Credentials struct {
 	Cid     string `json:"cid"`
 	Csecret string `json:"csecret"`
 }
 
-var DefaultKeysConfig *KeysConfig = &KeysConfig{
-	Cid:     "295529031882-ap6njd8e8p0bmggmvkb7t0iflhcetjn1.apps.googleusercontent.com",
-	Csecret: "ICiVhKO51UxbNfIQVR7WudxH",
-}
-
-const KeysConfigFile string = "keys/clientid.google.json"
-
-func (config *KeysConfig) SetConfig() *APIError {
-	file, err := ioutil.ReadFile(KeysConfigFile)
+func (cred *Credentials) SetFromFile() *conf.ApiError { // {{{
+	file, err := ioutil.ReadFile(keyf)
 	if err != nil {
-		config.Cid = DefaultKeysConfig.Cid
-		config.Csecret = DefaultKeysConfig.Csecret
-		return NewAPIError(err)
+		return conf.NewApiError(err)
 	}
 
-	err = json.Unmarshal(file, &config)
+	err = json.Unmarshal(file, &cred)
 	if err != nil {
-		config.Cid = DefaultKeysConfig.Cid
-		config.Csecret = DefaultKeysConfig.Csecret
-		return NewAPIError(err)
+		return conf.NewApiError(err)
 	}
-	return NewAPIError(err)
-}
+	return conf.NewApiError(err)
+} // }}}
+
+// func (config *KeysConfig) SetConfig() *APIError {
+// file, err := ioutil.ReadFile(KeysConfigFile)
+// if err != nil {
+// config.Cid = DefaultKeysConfig.Cid
+// config.Csecret = DefaultKeysConfig.Csecret
+// return NewAPIError(err)
+// }
+
+// err = json.Unmarshal(file, &config)
+// if err != nil {
+// config.Cid = DefaultKeysConfig.Cid
+// config.Csecret = DefaultKeysConfig.Csecret
+// return NewAPIError(err)
+// }
+// return NewAPIError(err)
+// }
 
 // ========== keys }}}
 

@@ -80,6 +80,7 @@ func (server *Server) NewEngine(port string) {
 	router.Use(static.Serve("/", static.LocalFile("./public", true)))
 
 	// login
+
 	router.GET("/login", LoginHandler)
 	router.GET("/auth", AuthHandler)
 
