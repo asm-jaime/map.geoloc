@@ -1,4 +1,4 @@
-package controllers
+package geoloc
 
 import (
 	"encoding/json"

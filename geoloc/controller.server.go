@@ -1,29 +1,34 @@
-package controllers
+package geoloc
 
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
 	"dvij.geoloc/conf"
-	"dvij.geoloc/models"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
+// ========== declaration of configs
+
 // Server for you
 type Server struct{}
 
+// configure vars
+var config *conf.ServerConfig
+var msgState *conf.MsgState
 var confTemp *oauth2.Config
 
-func testData(cont *gin.Context) {
+func lockTest(cont *gin.Context) {
 	cont.JSON(200, gin.H{"message: ": "test data"})
 }
 
-// ========== middlevares {{{
+// ========== middlewares {{{
 // AuthorizeRequest is used to authorize a request for a certain end-point group.
 func AuthorizeRequest() gin.HandlerFunc {
 	return func(thisContext *gin.Context) {
@@ -56,14 +61,26 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+func noRoute(c *gin.Context) {
+	path := strings.Split(c.Request.URL.Path, "/")
+	if (path[1] != "") && (path[1] == "api") {
+		c.JSON(http.StatusNotFound, msgState.Errors[http.StatusNotFound])
+	} else {
+		// c.HTML(http.StatusOK, "index.html", "")
+		c.Redirect("/")
+	}
+}
+
 // ========== middlevares }}}
 
-// NewEngine return the new gin server {{{
+// ========== init server {{{
+
+// NewEngine return the new gin server
 func (server *Server) NewEngine(port string) {
 	router := gin.Default()
 
 	// support sessions
-	store := sessions.NewCookieStore([]byte(models.RandToken(64)))
+	store := sessions.NewCookieStore([]byte(RandToken(64)))
 	store.Options(sessions.Options{
 		Path:   "/",
 		MaxAge: 86400 * 7,
@@ -73,51 +90,65 @@ func (server *Server) NewEngine(port string) {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(sessions.Sessions("goquestsession", store))
-	// add headers middleware
+	// headers middleware
 	router.Use(CORSMiddleware())
 
-	// all frontend
+	// frontend
 	router.Use(static.Serve("/", static.LocalFile("./public", true)))
 
-	// login
-
-	router.GET("/login", LoginHandler)
-	router.GET("/auth", AuthHandler)
-
-	// v1 group: here is API for authorized query
-	authorized := router.Group("/v1")
-	authorized.Use(AuthorizeRequest())
+	// set api routes
+	api := router.Group("api")
 	{
-		authorized.GET("/test", testData)
+		// api v1
+		v1 := api.Group("v1")
+		{
+			// login/oauth
+			v1.GET("/login", LoginHandler)
+			v1.GET("/auth", AuthHandler)
+
+			rnd_point := v1.Group("rnd_point")
+			{
+				rnd_point.GET("/get")
+				rnd_point.GET("/post")
+			}
+			//  group: here is API for authorized query
+			auth := v1.Group("/lock")
+			auth.Use(AuthorizeRequest())
+			{
+				auth.GET("/test", lockTest)
+			}
+		}
 	}
 
+	// start server
 	router.Run(":" + port)
-} // }}}
+}
 
 func Start(args []string) {
-	// init server config
-	server := conf.ServerConfig{}
-	server.SetConfig()
-
-	// init oauth keys
-	cred := conf.KeysConfig{}
-	err := cred.SetConfig()
-	if err.Code != 0 {
-		fmt.Print(err.Error())
-	}
+	// init config
+	config := conf.ServerConfig{}
+	config.SetDefault()
 
 	// processing console arguments
 	if len(args) > 3 { // set port
-		server.Port = args[3]
-	} else if len(args) > 4 { // set host
-		server.Host = args[4]
+		config.Port = args[3]
+	}
+	if len(args) > 4 { // set host
+		config.Host = args[4]
+	}
+	if len(args) > 5 { // set name of keyfile
+		config.KeyFile = args[5]
+	}
+	err := config.Cred.SetFromFile(config.KeyFile)
+	if err != nil {
+		fmt.Println(err)
 	}
 
 	// init oauth config
 	confTemp = &oauth2.Config{
-		ClientID:     cred.Cid,
-		ClientSecret: cred.Csecret,
-		RedirectURL:  "http://" + server.Host + ":" + server.Port + "/auth",
+		ClientID:     config.Cred.Cid,
+		ClientSecret: config.Cred.Csecret,
+		RedirectURL:  "http://" + config.Host + ":" + config.Port + "/auth",
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
 			// your own scope: https://developers.google.com/identity/protocols/googlescopes#google_sign-in
@@ -127,11 +158,13 @@ func Start(args []string) {
 
 	// info
 	fmt.Println("---------------")
-	fmt.Println("Selected port: " + server.Port)
-	fmt.Println("Selected host: " + server.Host)
+	fmt.Println("Selected port: " + config.Port)
+	fmt.Println("Selected host: " + config.Host)
 	fmt.Println("---------------")
 
 	// star server
-	thisServer := new(Server)
-	thisServer.NewEngine(server.Port)
+	server := new(Server)
+	server.NewEngine(config.Port)
 }
+
+// }}}

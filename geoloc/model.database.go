@@ -1,6 +1,4 @@
-// DataBase functional (sessions, initialisation, transformation)
-
-package models
+package geoloc
 
 import (
 	"fmt"
@@ -8,8 +6,6 @@ import (
 
 	"dvij.geoloc/conf"
 	//"encoding/json"
-
-	"gopkg.in/mgo.v2"
 	//"gopkg.in/mgo.v2/bson"
 	//"math/rand"
 )

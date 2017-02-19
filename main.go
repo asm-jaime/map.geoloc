@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
-
 	"os"
 
-	"dvij.geoloc/controllers"
+	"dvij.geoloc/conf"
+	"dvij.geoloc/geoloc"
 )
+
+var MsgState *conf.MsgState
 
 func main() {
 	// processing console arguments
@@ -48,7 +50,11 @@ func printCommandsHelp(command string) {
 func startServer(args []string) {
 	switch args[2] {
 	case "std":
-		controllers.Start(args)
+		geoloc.Start(args)
+	case "geoloc":
+		geoloc.Start(args)
+	case "chat":
+		chat.Start(args)
 	default:
 		fmt.Println("---------------")
 		fmt.Println("ERROR")

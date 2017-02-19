@@ -1,11 +1,19 @@
-package controllers
+package chat
 
+// hub maintains the set of active connections and broadcasts messages to the
+// connections.
 type Hub struct {
-	//(Reg/Inbound)conn||(Reg/Unreh)gister
+	// Registered connections.
 	connections map[*Conn]bool
-	broadcast   chan []byte
-	register    chan *Conn
-	unregister  chan *Conn
+
+	// Inbound messages from the connections.
+	broadcast chan []byte
+
+	// Register requests from the connections.
+	register chan *Conn
+
+	// Unregister requests from connections.
+	unregister chan *Conn
 }
 
 var hub = Hub{
