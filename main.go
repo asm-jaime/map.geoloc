@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"dvij.geoloc/chat"
 	"dvij.geoloc/conf"
 	"dvij.geoloc/geoloc"
 )

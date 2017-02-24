@@ -36,17 +36,16 @@ func (err *ApiError) PrintError() {
 }
 
 var (
-	ErrDatabase      = &APIError{http.StatusInternalServerError, "An unknown error occurred.", ""}
-	ErrSession       = &APIError{http.StatusInternalServerError, "An unknown error occurred.", ""}
-	ErrInvalidSet    = &APIError{http.StatusInternalServerError, "The set you requested does not exist.", ""}
-	ErrInvalidFind   = &APIError{http.StatusInternalServerError, "The find you requested does not exist.", ""}
-	ErrInvalidInsert = &APIError{http.StatusInternalServerError, "The insert you requested does not exist.", ""}
-	ErrInvalidUpdate = &APIError{http.StatusInternalServerError, "The update you requested does not exist.", ""}
-	ErrInvalidGroup  = &APIError{http.StatusInternalServerError, "The group you requested does not exist.", ""}
-	ErrHTTPSCert     = &APIError{http.StatusInternalServerError, "filest with cert does not exist.", ""}
-	ErrJSON          = &APIError{http.StatusInternalServerError, "An unknown error of json.marshal.", ""}
-	ErrNoError       = &ApiError{0, "No error.", ""}
+	ErrDatabase      = &ApiError{http.StatusInternalServerError, "An unknown error occurred.", ""}
+	ErrSession       = &ApiError{http.StatusInternalServerError, "An unknown error occurred.", ""}
+	ErrInvalidSet    = &ApiError{http.StatusInternalServerError, "The set you requested does not exist.", ""}
+	ErrInvalidFind   = &ApiError{http.StatusInternalServerError, "The find you requested does not exist.", ""}
+	ErrInvalidInsert = &ApiError{http.StatusInternalServerError, "The insert you requested does not exist.", ""}
+	ErrInvalidUpdate = &ApiError{http.StatusInternalServerError, "The update you requested does not exist.", ""}
+	ErrInvalidGroup  = &ApiError{http.StatusInternalServerError, "The group you requested does not exist.", ""}
+	ErrHTTPSCert     = &ApiError{http.StatusInternalServerError, "filest with cert does not exist.", ""}
 	ErrJSON          = &ApiError{http.StatusInternalServerError, "error of json.marshal.", ""}
+	ErrNoError       = &ApiError{0, "No error.", ""}
 )
 
 // type Header map[string]interface{}
