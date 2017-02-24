@@ -5,28 +5,58 @@ import (
 	"net/http"
 
 	"dvij.geoloc/conf"
-
 	"github.com/gin-gonic/gin"
 )
 
-// GetPoints get all points
+// ========== test
+
+func lockTest(cont *gin.Context) { // {{{
+	cont.JSON(200, gin.H{"message: ": "test data"})
+} // }}}
+
+// ========== points
+
 func GetPoints(c *gin.Context) { // {{{
 	fmt.Printf("\ngeost: %v", geoState)
 	if len(geoState.Location) > 0 {
 		c.JSON(http.StatusOK, conf.GiveResponse(geoState.Location))
 	} else {
-		c.JSON(http.StatusInternalServerError, MsgState.Errors[http.StatusInternalServerError])
+		c.JSON(http.StatusInternalServerError, msgState.Errors[http.StatusInternalServerError])
 	}
 } // }}}
 
-func PostPoint(c *gin.Context) {
+func PostPoint(c *gin.Context) { // {{{
 	var request GeoPoint
 
 	err := c.BindJSON(&request)
 	// fmt.Printf("\nreq: %v", request)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, MsgState.Errors[http.StatusBadRequest])
+		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
+		return
+	}
+
+	geoState.Add(&request)
+
+	c.JSON(http.StatusOK, conf.GiveResponse(request))
+} // }}}
+
+// ========== random points
+
+func GetRndPoint(c *gin.Context) {
+	var request GeoPoint
+	request.SetRnd()
+
+	c.JSON(http.StatusOK, conf.GiveResponse(request))
+}
+
+func PostRndPoint(c *gin.Context) {
+	var request GeoPoint
+
+	err := c.BindJSON(&request)
+	if err != nil {
+		fmt.Print(err)
+		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
 		return
 	}
 
@@ -35,33 +65,11 @@ func PostPoint(c *gin.Context) {
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
 }
 
-func GetRndPoint(c *gin.Context) { // {{{
-	var request GeoPoint
-	request.SetRnd()
-
-	c.JSON(http.StatusOK, conf.GiveResponse(request))
-} // }}}
-
-func PostRndPoint(c *gin.Context) { // {{{
-	var request GeoPoint
-
-	err := c.BindJSON(&request)
-	if err != nil {
-		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, MsgState.Errors[http.StatusBadRequest])
-		return
-	}
-
-	geoState.Add(&request)
-
-	c.JSON(http.StatusOK, conf.GiveResponse(request))
-} // }}}
-
 func GetPointFromToken(c *gin.Context) { // {{{
 
 	token := c.Request.URL.Query().Get("token")
 	if token == "" {
-		c.JSON(http.StatusBadRequest, MsgState.Errors[http.StatusBadRequest])
+		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
 		return
 	}
 	fmt.Printf("\n## get point: %s\n", token)
@@ -69,7 +77,7 @@ func GetPointFromToken(c *gin.Context) { // {{{
 	if point, ok := geoState.GetPoint(token); ok {
 		c.JSON(http.StatusOK, conf.GiveResponse(point))
 	} else {
-		c.JSON(http.StatusNotFound, MsgState.Errors[http.StatusNotFound])
+		c.JSON(http.StatusNotFound, msgState.Errors[http.StatusNotFound])
 	}
 } // }}}
 
@@ -79,7 +87,7 @@ func PutDistance(c *gin.Context) { // {{{
 	err := c.BindJSON(&request)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, MsgState.Errors[http.StatusBadRequest])
+		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
 		return
 	}
 
@@ -99,7 +107,7 @@ func PostCheckPoint(c *gin.Context) { // {{{
 	err := c.BindJSON(&request)
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusBadRequest, MsgState.Errors[http.StatusBadRequest])
+		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
 		return
 	}
 
@@ -107,25 +115,3 @@ func PostCheckPoint(c *gin.Context) { // {{{
 
 	c.JSON(http.StatusOK, conf.GiveResponse(checkPoint))
 } // }}}
-
-// GetNEvents df
-func GetNEvents(context *gin.Context) {
-	var err error
-	callback := context.Value("callback")
-	if callback != "" {
-		// conf.NewEasyAPIError(101, callback)
-	}
-	context.Request.Header.Set("Content-Type", "application/json")
-
-	thisEvents := models.NewEvents()
-	err = thisEvents.GetNEvents(10)
-	if err != nil {
-		fmt.Print(err.Error())
-	}
-	if callback != "" {
-		var jsonEvents []byte
-		jsonEvents, err = thisEvents.GetAsJSON()
-		jsonEvents = []byte(fmt.Sprintf("%s(%s)", callback, jsonEvents))
-		context.Writer.Write(jsonEvents)
-	}
-}

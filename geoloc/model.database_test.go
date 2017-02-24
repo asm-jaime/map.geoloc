@@ -4,66 +4,96 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"dvij.geoloc/conf"
-	"dvij.geoloc/models"
 )
 
-func TestDbSession(testT *testing.T) {
-	thisSession, apiError := DbSession(conf.MgoConfig())
-	defer thisSession.Close()
-	fmt.Print("\na session:\n")
-	fmt.Print(thisSession)
-	if apiError != nil {
-		testT.Error("error session : ", apiError)
-	}
-}
+func dbForTest() (database *MongoDB) { // {{{
+	database = &MongoDB{}
+	database.config.SetDefault()
+	database.config.Database = "test"
+	database.config.Info = database.config.MgoConfig()
+	return database
+} // }}}
 
-func TestInitStructureDataBase() {
-	err := models.DropDataBase()
-	err = models.InitStructureDataBase()
-	err = models.StdFillDataBase(10)
+func TestSession(testT *testing.T) { // {{{
+	testdb := dbForTest()
+	session, err := testdb.Session()
+	defer session.Close()
+	fmt.Printf("\na session: %v\n", session)
 	if err != nil {
-		fmt.Print(err.Error())
+		testT.Error("error session : ", err)
 	}
 }
 
-func TestInsertArrayEvents() {
-	thisArray := models.MakeArrayEventsV1(4)
-	err := models.InsertArrayEvents(thisArray)
+func TestInit(testT *testing.T) {
+	testdb := dbForTest()
+	err := testdb.Init()
 	if err != nil {
-		fmt.Print(err.Error())
+		testT.Error("error Init : ", err)
 	}
-}
 
-func TestMakeInterfaceEvents() {
-	//thisArray := models.MakeInterfaceEvents(4)
-	//fmt.Print(thisArray)
-}
+	err = testdb.FillRnd(10)
+	if err != nil {
+		testT.Error("error FillRnd: ", err)
+	}
 
-// func TestConnectDataBase() {
-// thisSession := models.DbSession()
-// defer thisSession.Close()
-// fmt.Print(thisSession)
-// }
+	points, err := testdb.GetAllPoints()
+	if err != nil {
+		testT.Error("error GetAllPoints: ", err)
+	}
+	if len(points) == 0 {
+		testT.Error("error, points was not added")
+	}
+} // }}}
 
 func TestFillRnd(testT *testing.T) { // {{{
-	//collection := session.DB(conf.MgoDatabase).C("events")
-	thisEvents := NewEvents()
+	var points GeoPoints
+	num := 1000
+	testdb := dbForTest()
+	err := testdb.Init()
+	if err != nil {
+		testT.Error("error Init in FillRnd: ", err)
+	}
+
+	session, err := testdb.Session()
+	if err != nil {
+		testT.Error("error session : ", err)
+	}
+	defer session.Close()
+	// make array of event
 	start := time.Now()
+	point := new(GeoPoint)
 	for i := 0; i < num; i++ {
-		thisEvent.SetStdParam()
-		*thisEvents = append(*thisEvents, *thisEvent)
+		point.SetRnd()
+		points = append(points, *point)
 	}
 	elapsed := time.Since(start)
-	fmt.Print('\n' + elapsed)
+	fmt.Printf("\nelapsed make %v points: %v\n", num, elapsed)
+	collection := session.DB(testdb.config.Database).C("dviPoints")
 
-	fmt.Print('\n' + len(*thisEvents))
-	//start = time.Now()
-	//for i := 0; i < 10; i++ {
-	//thisEvents.InsertEvents()
-	//}
-	//elapsed = time.Since(start)
-	//fmt.Print('\n' + elapsed)
-	return nil
+	// Normal insertion
+	start = time.Now()
+	for i := 0; i < len(points); i++ {
+		err = collection.Insert(points[i])
+	}
+	elapsed = time.Since(start)
+	fmt.Printf("\nelapsed Normal Insert: %v\n", elapsed)
+	if err != nil {
+		testT.Error("error Normal Insertion: ", err)
+	}
 } // }}}
+
+// // Bulk insertion// {{{
+// start = time.Now()
+// docs := make([]interface{}, len(events))
+// for i := 0; i < len(events); i++ {
+// docs[i] = events[i]
+// }
+// fmt.Printf("\n docs: %v \n", docs)
+// collection.Bulk().Insert(docs...)
+// res, err := collection.Bulk().Run()
+// elapsed = time.Since(start)
+// fmt.Printf("\nelapsed Bulk Insert: %v\n", elapsed)
+// if err != nil {
+// testT.Error("error FillRnd Insertion: ", err)
+// }
+// fmt.Printf("res: %v", res)// }}}

@@ -8,16 +8,10 @@ import (
 	"net/http"
 	"strings"
 
-	"dvij.geoloc/models"
-
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 )
-
-func getLoginURL(state string) string { // {{{
-	return confTemp.AuthCodeURL(state)
-} // }}}
 
 // AuthHandler handles authentication of a user and initiates a session {{{
 func AuthHandler(cont *gin.Context) {
@@ -54,7 +48,7 @@ func AuthHandler(cont *gin.Context) {
 
 	defer userinfo.Body.Close()
 	data, _ := ioutil.ReadAll(userinfo.Body)
-	user := models.DviUser{}
+	user := DviUser{}
 	if err = json.Unmarshal(data, &user); err != nil {
 		log.Println(err)
 		cont.JSON(http.StatusBadRequest, gin.H{"message": "Error marshalling response. Please try agian."})
@@ -70,7 +64,7 @@ func AuthHandler(cont *gin.Context) {
 	log.Println(err)
 
 	seen := false
-	db := models.DviMongoDB{}
+	db := DviMongoDB{}
 	if _, mongoErr := db.LoadUser(user.Email); mongoErr == nil {
 		seen = true
 	} else {
@@ -88,13 +82,13 @@ func AuthHandler(cont *gin.Context) {
 // LoginHandler handles the login procedure {{{
 func LoginHandler(cont *gin.Context) {
 	// session
-	state := models.RandToken(32)
+	state := RandToken(32)
 	session := sessions.Default(cont)
 	session.Set("state", state)
 	session.Save()
 
 	// response
-	link := getLoginURL(state)
+	link := confTemp.AuthCodeURL(state)
 	cont.JSON(http.StatusOK, gin.H{
 		"auth_url":     confTemp.Endpoint.AuthURL,
 		"client_id":    confTemp.ClientID,
