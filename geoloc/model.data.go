@@ -23,18 +23,22 @@ type DistanceReq struct {
 
 // User user
 type User struct {
-	ID       string `form:"id"`
-	Username string `form:"name"`
-	Email    string `form:"email"`
-	Descr    string `form:"description"`
+	Id          bson.ObjectId   `form:"_id"`
+	Username    string          `form:"name" binding:"required"`
+	Email       string          `form:"email" binding:"required"`
+	Description string          `form:"description" binding:"required"`
+	Events      []bson.ObjectId `form:"events"`
+	Groups      []bson.ObjectId `form:"groups"`
 }
 
 // Event struct for processing events
 type Event struct {
-	ID       string    `form:"id"`
-	Name     string    `form:"name"`
-	Descript string    `form:"description"`
-	TTLEvent time.Time `form:"ttl"`
+	Id          bson.ObjectId   `form:"_id"`
+	Name        string          `form:"name" binding:"required"`
+	Description string          `form:"description" binding:"required"`
+	TTLEvent    time.Time       `form:"ttl"`
+	Users       []bson.ObjectId `form:"users"`
+	Groups      []bson.ObjectId `form:"groups"`
 }
 
 // Events array of event
@@ -42,9 +46,13 @@ type Events []Event
 
 // GeoPoint for example {lat: 1.011111, lng: 1.0000450}
 type GeoPoint struct {
-	Type        string     `form:"-"`
-	Token       string     `form:"token" binding:"required"`
-	Coordinates [2]float64 `form:"coordinates" binding:"required"`
+	Type        string        `form:"-"`
+	Id          bson.ObjectId `form:"_id"`
+	UserId      bson.ObjectId `form:"user_id"`
+	EventId     bson.ObjectId `form:"event_id"`
+	GroupId     bson.ObjectId `form:"group_id"`
+	Token       string        `form:"token" binding:"required"`
+	Coordinates [2]float64    `form:"coordinates" binding:"required"`
 }
 
 // GeoPoints array of event
@@ -141,6 +149,7 @@ func NewGeoPoint() *GeoPoint {
 
 // SetRnd set random data to a point {{{
 func (point *GeoPoint) SetRnd() {
+	point.Id = bson.NewObjectId()
 	point.Type = "Point"
 	point.Token = rndStr(8)
 	point.Coordinates[0] = (rand.Float64() * 5) + 5
@@ -159,10 +168,10 @@ func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) {
 
 // SetRnd set standart params for the user {{{
 func (user *User) SetRnd() {
-	user.ID = string(bson.NewObjectId())
+	user.Id = bson.NewObjectId()
 	user.Username = "jhon " + rndStr(4)
 	user.Email = rndStr(6) + "@" + rndStr(4) + "." + rndStr(2)
-	user.Descr = "descr: " + rndStr(10)
+	user.Description = "descr: " + rndStr(10)
 } // }}}
 
 // ========== Event
@@ -176,8 +185,8 @@ func NewEvent() *Event {
 
 // SetRnd set all random params for event {{{
 func (event *Event) SetRnd() {
-	event.ID = string(bson.NewObjectId())
-	event.Name = "event: " + event.ID
-	event.Descript = "descr: " + rndStr(10)
+	event.Id = bson.NewObjectId()
+	event.Name = "event: " + string(event.Id)
+	event.Description = "descr: " + rndStr(10)
 	event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
 } // }}}

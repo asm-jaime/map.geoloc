@@ -16,9 +16,18 @@ func dbForTest() (database *MongoDB) { // {{{
 
 func TestSession(testT *testing.T) { // {{{
 	testdb := dbForTest()
+
+	free_session, err := testdb.FreeSession()
+	defer free_session.Close()
+	fmt.Printf("\n free session: %v\n", free_session)
+	if err != nil {
+		testT.Error("error free session : ", err)
+		return
+	}
+
 	session, err := testdb.Session()
 	defer session.Close()
-	fmt.Printf("\na session: %v\n", session)
+	fmt.Printf("\ndefault session: %v\n", session)
 	if err != nil {
 		testT.Error("error session : ", err)
 	}
@@ -47,7 +56,7 @@ func TestInit(testT *testing.T) {
 
 func TestFillRnd(testT *testing.T) { // {{{
 	var points GeoPoints
-	num := 1000
+	num := 10
 	testdb := dbForTest()
 	err := testdb.Init()
 	if err != nil {
@@ -80,6 +89,11 @@ func TestFillRnd(testT *testing.T) { // {{{
 	if err != nil {
 		testT.Error("error Normal Insertion: ", err)
 	}
+	points_db, err := testdb.GetAllPoints()
+	if err != nil {
+		testT.Error("error GetAllPoints in FillRnd for MongoDB: ", err)
+	}
+	fmt.Printf("\n points from database: %v \n", points_db)
 } // }}}
 
 // // Bulk insertion// {{{

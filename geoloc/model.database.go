@@ -30,6 +30,18 @@ func (mongodb *MongoDB) Session() (session *mgo.Session, err error) { // {{{
 
 // ========== database init
 
+// StartInitDB from command line (start initdb)
+func StartInitDB() { // {{{
+	database = &MongoDB{}
+	database.config.SetDefault()
+	err := database.Init()
+	if err != nil {
+		fmt.Printf("\nerror init database: %v\n", err)
+	} else {
+		fmt.Printf("\ninit database sucess: \n%v\n", database.config)
+	}
+} // }}}
+
 // UpsertDefaultUser add or update a system user from default data
 func (mongodb *MongoDB) UpsertDefaultUser() (err error) { // {{{
 	session, err := mongodb.FreeSession()
@@ -66,7 +78,7 @@ func (mongodb *MongoDB) Drop() (err error) { // {{{
 } // }}}
 
 // Init DataBase structure, set user, password, tables, etc
-func (mongodb *MongoDB) Init() (err error) { // {{{
+func (mongodb *MongoDB) Init() (err error) {
 	/* ====================
 	   Index params:
 	   Unique: causes MongoDB to reject all documents that contain a duplicate value
@@ -74,9 +86,14 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 	   TTL: expire data after a period of time.
 	   ==================== */
 
-	err = mongodb.Drop()
+	session, err := mongodb.FreeSession()
 	if err != nil {
 		return err
+	}
+
+	err = mongodb.Drop()
+	if err != nil {
+		fmt.Printf("\n drop database error: %v\n", err)
 	}
 
 	err = mongodb.UpsertDefaultUser()
@@ -84,70 +101,76 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 		return err
 	}
 
-	session, err := mongodb.Session()
-	if err != nil {
-		return err
-	}
-
 	defer session.Close()
 	session.EnsureSafe(&mgo.Safe{})
 
-	collection := session.DB(mongodb.config.Database).C("dviEvents")
+	// ========== users
+
+	collection := session.DB(mongodb.config.Database).C("dviUsers")
 
 	index := mgo.Index{
-		Key:        []string{"name", "description"},
+		Key:        []string{"name", "email", "description", "events", "groups"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.ErrDatabase
+		return err
 	}
 
+	// ========== events
+
+	collection = session.DB(mongodb.config.Database).C("dviEvents")
+
 	index = mgo.Index{
-		Key:  []string{"$2dsphere:location"},
-		Bits: 26,
+		Key:        []string{"name", "description", "users", "groups"},
+		Unique:     false,
+		Background: true,
+		Sparse:     true,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.ErrDatabase
+		return err
 	}
 
-	// ExpireAfter: mongodb.config.EventTTLAfterEnd,
 	index = mgo.Index{
 		Key:         []string{"ttl"},
 		ExpireAfter: time.Duration(1) * time.Second,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.ErrDatabase
+		return err
 	}
 
-	collection = session.DB(mongodb.config.Database).C("dviUsers")
+	// ========== groups
+
+	collection = session.DB(mongodb.config.Database).C("dviGroups")
 
 	index = mgo.Index{
-		Key:        []string{"id", "name", "email", "description"},
+		Key:        []string{"name", "description", "users", "events"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.ErrDatabase
+		return err
 	}
+
+	// ========== points
 
 	collection = session.DB(mongodb.config.Database).C("dviPoints")
 
 	index = mgo.Index{
-		Key:        []string{"id", "user_id", "event_id", "group_id"},
+		Key:        []string{"user_id", "event_id", "group_id"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.ErrDatabase
+		return err
 	}
 
 	index = mgo.Index{
@@ -156,11 +179,11 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
-		return conf.ErrDatabase
+		return err
 	}
 
 	return nil
-} // }}}
+}
 
 // FillRnd random data on db
 func (mongodb *MongoDB) FillRnd(num int) (err error) { // {{{
@@ -204,7 +227,7 @@ func (mongodb *MongoDB) InsertUser(user *User) (err error) { // {{{
 	}
 
 	defer session.Close()
-	if _, err := mongodb.LoadUser(user.Email); err == nil {
+	if _, err := mongodb.GetUserOnMail(user.Email); err == nil {
 		return fmt.Errorf("User already exists!")
 	}
 
@@ -213,8 +236,8 @@ func (mongodb *MongoDB) InsertUser(user *User) (err error) { // {{{
 	return err
 } // }}}
 
-// LoadUser get user on email
-func (mongodb *MongoDB) LoadUser(Email string) (user User, err error) { // {{{
+// GetUserOnMail get user on email
+func (mongodb *MongoDB) GetUserOnMail(Email string) (user User, err error) { // {{{
 	session, err := mongodb.Session()
 	if err != nil {
 		return user, err

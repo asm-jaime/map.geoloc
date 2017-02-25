@@ -48,7 +48,7 @@ func AuthHandler(cont *gin.Context) {
 
 	defer userinfo.Body.Close()
 	data, _ := ioutil.ReadAll(userinfo.Body)
-	user := DviUser{}
+	user := User{}
 	if err = json.Unmarshal(data, &user); err != nil {
 		log.Println(err)
 		cont.JSON(http.StatusBadRequest, gin.H{"message": "Error marshalling response. Please try agian."})
@@ -64,11 +64,11 @@ func AuthHandler(cont *gin.Context) {
 	log.Println(err)
 
 	seen := false
-	db := DviMongoDB{}
+	db := MongoDB{}
 	if _, mongoErr := db.LoadUser(user.Email); mongoErr == nil {
 		seen = true
 	} else {
-		err = db.SaveUser(&user)
+		err = db.InsertUser(&user)
 		if err != nil {
 			log.Println(err)
 			cont.JSON(http.StatusBadRequest, gin.H{"message": "Error while saving user. Please try again."})

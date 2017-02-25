@@ -107,7 +107,7 @@ func (config *DbConfig) SetDefault() {
 	config.Host = "localhost"
 	config.Addrs = config.Host + ":" + config.Port
 	// database
-	config.Database = "dvi_mgo"
+	config.Database = "dviMongo"
 	// user for requests
 	config.Username = "jaime"
 	config.Password = "123456789"
