@@ -65,7 +65,7 @@ func AuthHandler(cont *gin.Context) {
 
 	seen := false
 	db := MongoDB{}
-	if _, mongoErr := db.LoadUser(user.Email); mongoErr == nil {
+	if _, mongoErr := db.GetUserOnMail(user.Email); mongoErr == nil {
 		seen = true
 	} else {
 		err = db.InsertUser(&user)

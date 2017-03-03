@@ -15,13 +15,20 @@ func dbForTest() (database *MongoDB) { // {{{
 } // }}}
 
 func TestSession(testT *testing.T) { // {{{
+	fmt.Print("\n== start TestSession ==\n")
 	testdb := dbForTest()
 
 	free_session, err := testdb.FreeSession()
 	defer free_session.Close()
 	fmt.Printf("\n free session: %v\n", free_session)
 	if err != nil {
-		testT.Error("error free session : ", err)
+		testT.Error("error free session: ", err)
+		return
+	}
+
+	err = testdb.Init()
+	if err != nil {
+		testT.Error("error Init: ", err)
 		return
 	}
 
@@ -29,11 +36,12 @@ func TestSession(testT *testing.T) { // {{{
 	defer session.Close()
 	fmt.Printf("\ndefault session: %v\n", session)
 	if err != nil {
-		testT.Error("error session : ", err)
+		testT.Error("error session: ", err)
 	}
-}
+	fmt.Print("\n== end TestSession ==\n")
+} // }}}
 
-func TestInit(testT *testing.T) {
+func TestInit(testT *testing.T) { // {{{
 	testdb := dbForTest()
 	err := testdb.Init()
 	if err != nil {
@@ -54,47 +62,56 @@ func TestInit(testT *testing.T) {
 	}
 } // }}}
 
-func TestFillRnd(testT *testing.T) { // {{{
-	var points GeoPoints
+func TestFillRnd(testT *testing.T) {
 	num := 10
+
 	testdb := dbForTest()
 	err := testdb.Init()
 	if err != nil {
 		testT.Error("error Init in FillRnd: ", err)
 	}
 
-	session, err := testdb.Session()
-	if err != nil {
-		testT.Error("error session : ", err)
-	}
-	defer session.Close()
-	// make array of event
-	start := time.Now()
-	point := new(GeoPoint)
-	for i := 0; i < num; i++ {
-		point.SetRnd()
-		points = append(points, *point)
-	}
-	elapsed := time.Since(start)
-	fmt.Printf("\nelapsed make %v points: %v\n", num, elapsed)
-	collection := session.DB(testdb.config.Database).C("dviPoints")
-
 	// Normal insertion
-	start = time.Now()
-	for i := 0; i < len(points); i++ {
-		err = collection.Insert(points[i])
-	}
-	elapsed = time.Since(start)
-	fmt.Printf("\nelapsed Normal Insert: %v\n", elapsed)
+	start := time.Now()
+
+	err = testdb.FillRnd(num)
+
+	elapsed := time.Since(start)
+	fmt.Printf("\nelapsed FillRnd: %v\n", elapsed)
 	if err != nil {
-		testT.Error("error Normal Insertion: ", err)
+		testT.Error("error FillRnd: ", err)
 	}
-	points_db, err := testdb.GetAllPoints()
+
+	points, err := testdb.GetAllPoints()
+	if err != nil || len(points) == 0 {
+		testT.Error("error GetAllPoints in FillRnd: ", err)
+	}
+	fmt.Printf("\n %v points, one from db: %v \n", len(points), points[0])
+
+	events, err := testdb.GetAllEvents()
+	if err != nil || len(events) == 0 {
+		testT.Error("error GetAllEvents in FillRnd: ", err)
+	}
+	fmt.Printf("\n %v events, one from db: %v \n", len(events), events[0])
+}
+
+func TestInsertPoint(testT *testing.T) {
+	testdb := dbForTest()
+	err := testdb.Init()
 	if err != nil {
-		testT.Error("error GetAllPoints in FillRnd for MongoDB: ", err)
+		testT.Error("error InsertPoint: ", err)
 	}
-	fmt.Printf("\n points from database: %v \n", points_db)
-} // }}}
+	user := new(User)
+	user.SetRnd()
+
+	point := new(GeoPoint)
+	point.SetRnd()
+
+	err = testdb.InsertPoint(point)
+	if err != nil {
+		testT.Error("error InsertPoint: ", err)
+	}
+}
 
 // // Bulk insertion// {{{
 // start = time.Now()

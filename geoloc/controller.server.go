@@ -130,7 +130,7 @@ func (server *Server) NewEngine(port string) {
 	router.Run(":" + port)
 } // }}}
 
-func Start(args []string) { // {{{
+func Start(args []string) (err error) { // {{{
 	// init config
 	config := conf.ServerConfig{}
 	config.SetDefault()
@@ -143,16 +143,16 @@ func Start(args []string) { // {{{
 	database.config.SetDefault()
 
 	// processing console arguments
-	if len(args) > 2 { // set port
+	if len(args) > 3 { // set port
 		config.Port = args[3]
 	}
-	if len(args) > 3 { // set host
+	if len(args) > 4 { // set host
 		config.Host = args[4]
 	}
-	if len(args) > 4 { // set name of keyfile
+	if len(args) > 5 { // set name of keyfile
 		config.KeyFile = args[5]
 	}
-	err := config.Cred.SetFromFile(config.KeyFile)
+	err = config.Cred.SetFromFile(config.KeyFile)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -176,7 +176,20 @@ func Start(args []string) { // {{{
 	fmt.Println("Selected filekey: " + config.KeyFile)
 	fmt.Println("---------------")
 
+	// err = database.FillRnd(5)
+	// if err != nil {
+	// fmt.Printf("err on filling: %v", err)
+	// }
+
+	// events, err := database.GetAllEvents()
+	// fmt.Printf("ev: %v\n", events)
+
+	// points, err := database.GetAllPoints()
+	// fmt.Printf("pt: %v\n", points)
+
 	// star server
 	server := new(Server)
 	server.NewEngine(config.Port)
+
+	return err
 } // }}}

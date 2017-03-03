@@ -71,17 +71,17 @@ type Credentials struct {
 	Csecret string `json:"csecret"`
 }
 
-func (cred *Credentials) SetFromFile(keyf string) *ApiError {
+func (cred *Credentials) SetFromFile(keyf string) (err error) {
 	file, err := ioutil.ReadFile(keyf)
 	if err != nil {
-		return NewApiError(err)
+		return err
 	}
 
 	err = json.Unmarshal(file, &cred)
 	if err != nil {
-		return NewApiError(err)
+		return err
 	}
-	return NewApiError(err)
+	return err
 }
 
 // }}}

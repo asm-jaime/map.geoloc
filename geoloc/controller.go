@@ -18,8 +18,8 @@ func lockTest(cont *gin.Context) { // {{{
 
 func GetPoints(c *gin.Context) { // {{{
 	fmt.Printf("\ngeost: %v", geoState)
-	if len(geoState.Location) > 0 {
-		c.JSON(http.StatusOK, conf.GiveResponse(geoState.Location))
+	if len(geoState.Points) > 0 {
+		c.JSON(http.StatusOK, conf.GiveResponse(geoState.Points))
 	} else {
 		c.JSON(http.StatusInternalServerError, msgState.Errors[http.StatusInternalServerError])
 	}
@@ -65,21 +65,24 @@ func PostRndPoint(c *gin.Context) {
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
 }
 
-func GetPointFromToken(c *gin.Context) { // {{{
+/*
+func GetPointFromState(c *gin.Context) { // {{{
+	request TokenReq
 
-	token := c.Request.URL.Query().Get("token")
-	if token == "" {
+	err := c.BindJSON(&request)
+	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
 		return
 	}
-	fmt.Printf("\n## get point: %s\n", token)
 
-	if point, ok := geoState.GetPoint(token); ok {
+	if point, ok := geoState.GetPoint(.Id); ok {
 		c.JSON(http.StatusOK, conf.GiveResponse(point))
 	} else {
 		c.JSON(http.StatusNotFound, msgState.Errors[http.StatusNotFound])
 	}
 } // }}}
+*/
 
 func PutDistance(c *gin.Context) { // {{{
 	var request GeoPoint

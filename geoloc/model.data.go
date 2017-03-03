@@ -8,65 +8,91 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
 // ========== data section
 
 type TokenReq struct {
-	Token string `form:"token" binding:"required"`
+	Token string `form:"token" binding:"required" bson:"token"`
 }
 
 type DistanceReq struct {
 	Distance float64 `form:"distance" binding:"required"`
 }
 
-// User user
+// ========== Users {{{
+
 type User struct {
-	Id          bson.ObjectId   `form:"_id"`
-	Username    string          `form:"name" binding:"required"`
-	Email       string          `form:"email" binding:"required"`
-	Description string          `form:"description" binding:"required"`
-	Events      []bson.ObjectId `form:"events"`
-	Groups      []bson.ObjectId `form:"groups"`
+	Id          bson.ObjectId `form:"_id" bson:"_id"`
+	Name        string        `form:"name" binding:"required" bson:"name"`
+	Email       string        `form:"email" binding:"required" bson:"email"`
+	Description string        `form:"description" binding:"required" bson:"description"`
+	Events      EventRefs     `form:"events" bson:"events,omitempty"`
+	Groups      GroupRefs     `form:"groups" bson:"groups,omitempty"`
 }
+
+type Users []User
+type UserRefs []mgo.DBRef
+
+// }}}
+
+// ========== Events {{{
 
 // Event struct for processing events
 type Event struct {
-	Id          bson.ObjectId   `form:"_id"`
-	Name        string          `form:"name" binding:"required"`
-	Description string          `form:"description" binding:"required"`
-	TTLEvent    time.Time       `form:"ttl"`
-	Users       []bson.ObjectId `form:"users"`
-	Groups      []bson.ObjectId `form:"groups"`
+	Id          bson.ObjectId `form:"_id" bson:"_id"`
+	Name        string        `form:"name" binding:"required" bson:"name"`
+	Description string        `form:"description" binding:"required" bson:"description"`
+	TTLEvent    time.Time     `form:"ttl" bson:"ttl,omitempty"`
+	Users       UserRefs      `form:"users" bson:"users,omitempty"`
+	Groups      GroupRefs     `form:"groups" bson:"groups,omitempty"`
 }
 
-// Events array of event
+type EventRefs []mgo.DBRef
 type Events []Event
+
+// }}}
+
+// ========== Groups {{{
+
+type Group struct {
+	Id          bson.ObjectId `form:"_id" bson:"_id"`
+	Name        string        `form:"name" binding:"required"`
+	Description string        `form:"description" binding:"required"`
+	Users       UserRefs      `form:"users" bson:"users,omitempty"`
+	Events      EventRefs     `form:"events" bson:"events,omitempty"`
+}
+
+type Groups []Group
+type GroupRefs []mgo.DBRef
+
+// }}}
+
+// ========== Points {{{
 
 // GeoPoint for example {lat: 1.011111, lng: 1.0000450}
 type GeoPoint struct {
-	Type        string        `form:"-"`
-	Id          bson.ObjectId `form:"_id"`
-	UserId      bson.ObjectId `form:"user_id"`
-	EventId     bson.ObjectId `form:"event_id"`
-	GroupId     bson.ObjectId `form:"group_id"`
-	Token       string        `form:"token" binding:"required"`
-	Coordinates [2]float64    `form:"coordinates" binding:"required"`
+	Id          bson.ObjectId `form:"_id" bson:"_id"`
+	Type        string        `bson:"-"`
+	Token       string        `form:"token" binding:"required" bson:"token,omitempty"`
+	Coordinates [2]float64    `form:"coordinates" binding:"required" bson:"coordinates"`
 }
 
-// GeoPoints array of event
+type GeoPointRefs []mgo.DBRef
 type GeoPoints []GeoPoint
 
 // GeoState is map(array) of points
 type GeoState struct {
-	Location map[string]GeoPoint `form:"location" binding:"required"`
+	Points map[bson.ObjectId]GeoPoint
 	sync.RWMutex
 }
 
-// ========== random
+// }}}
 
-// {{{
+// ========== random {{{
+
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 func rndStr(n int) string {
@@ -89,7 +115,7 @@ func RandToken(length int) string {
 // NewGeoState will return a new state {{{
 func NewGeoState() *GeoState {
 	return &GeoState{
-		Location: make(map[string]GeoPoint),
+		Points: make(map[bson.ObjectId]GeoPoint),
 	}
 } // }}}
 
@@ -97,7 +123,7 @@ func NewGeoState() *GeoState {
 func (geost *GeoState) Add(point *GeoPoint) {
 	geost.Lock()
 	defer geost.Unlock()
-	geost.Location[point.Token] = *point
+	geost.Points[point.Id] = *point
 } // }}}
 
 // SetRnd fill GeoState the n points {{{
@@ -108,7 +134,7 @@ func (geost *GeoState) SetRnd(num int) {
 	point := new(GeoPoint)
 	for i := 0; i < num; i++ {
 		point.SetRnd()
-		geost.Location[point.Token] = *point
+		geost.Points[point.Id] = *point
 	}
 } // }}}
 
@@ -122,71 +148,74 @@ func (geost *GeoState) Clear() {
 	geost.Lock()
 	defer geost.Unlock()
 
-	geost.Location = make(map[string]GeoPoint)
+	geost.Points = make(map[bson.ObjectId]GeoPoint)
 } // }}}
 
 // Len return lenght state {{{
 func (geost *GeoState) Len() int {
-	return len(geost.Location)
+	return len(geost.Points)
 } // }}}
 
 // GetPoint new point with token// {{{
-func (geost *GeoState) GetPoint(token string) (point GeoPoint, ok bool) {
+func (geost *GeoState) GetPoint(id bson.ObjectId) (point GeoPoint, ok bool) {
 	geost.Lock()
 	defer geost.Unlock()
-	point, ok = geost.Location[token]
+	point, ok = geost.Points[id]
 	return point, ok
 } // }}}
 
 // ========== GeoPoint methods
 
-// NewGeoPoint will return a new point {{{
-func NewGeoPoint() *GeoPoint {
+func NewGeoPoint() *GeoPoint { // {{{
 	point := new(GeoPoint)
 	point.SetRnd()
 	return point
 } // }}}
 
-// SetRnd set random data to a point {{{
-func (point *GeoPoint) SetRnd() {
+func (point *GeoPoint) SetRnd() { // {{{
 	point.Id = bson.NewObjectId()
-	point.Type = "Point"
 	point.Token = rndStr(8)
+	point.Type = "Point"
 	point.Coordinates[0] = (rand.Float64() * 5) + 5
 	point.Coordinates[1] = (rand.Float64() * 5) + 5
 } // }}}
 
-// GetDistance set random data to a point// {{{
-func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) {
+// GetDistance set random data to a point
+func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) { // {{{
 	distance = math.Sqrt(
 		math.Pow(point.Coordinates[0]-toPoint.Coordinates[0], 2) +
 			math.Pow(point.Coordinates[1]-toPoint.Coordinates[1], 2))
 	return distance
 } // }}}
 
-// ========== User methods
+// ========== User
 
-// SetRnd set standart params for the user {{{
-func (user *User) SetRnd() {
+func (user *User) SetRnd() { // {{{
 	user.Id = bson.NewObjectId()
-	user.Username = "jhon " + rndStr(4)
+	user.Name = "jhon " + rndStr(4)
 	user.Email = rndStr(6) + "@" + rndStr(4) + "." + rndStr(2)
 	user.Description = "descr: " + rndStr(10)
 } // }}}
 
 // ========== Event
 
-// NewEvent will return a new point {{{
-func NewEvent() *Event {
+func NewEvent() *Event { // {{{
 	event := new(Event)
 	event.SetRnd()
 	return event
 } // }}}
 
-// SetRnd set all random params for event {{{
 func (event *Event) SetRnd() {
 	event.Id = bson.NewObjectId()
 	event.Name = "event: " + string(event.Id)
 	event.Description = "descr: " + rndStr(10)
-	event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
+	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
+}
+
+// ========== groups
+
+func (group *Group) SetRnd() { // {{{
+	group.Id = bson.NewObjectId()
+	group.Name = "group: " + string(group.Id)
+	group.Description = "descr: " + rndStr(10)
 } // }}}
