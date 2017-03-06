@@ -14,6 +14,13 @@ func lockTest(cont *gin.Context) { // {{{
 	cont.JSON(200, gin.H{"message: ": "test data"})
 } // }}}
 
+// ========== users
+
+func GetUser(c *gin.Context) {
+	request := c.Request.URL.Query().Get("id")
+	c.JSON(http.StatusOK, conf.GiveResponse(request))
+}
+
 // ========== points
 
 func GetPoints(c *gin.Context) { // {{{
@@ -43,14 +50,14 @@ func PostPoint(c *gin.Context) { // {{{
 
 // ========== random points
 
-func GetRndPoint(c *gin.Context) {
+func GetRndPoint(c *gin.Context) { // {{{
 	var request GeoPoint
 	request.SetRnd()
 
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
-}
+} // }}}
 
-func PostRndPoint(c *gin.Context) {
+func PostRndPoint(c *gin.Context) { // {{{
 	var request GeoPoint
 
 	err := c.BindJSON(&request)
@@ -63,7 +70,7 @@ func PostRndPoint(c *gin.Context) {
 	geoState.Add(&request)
 
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
-}
+} // }}}
 
 /*
 func GetPointFromState(c *gin.Context) { // {{{
@@ -117,4 +124,14 @@ func PostCheckPoint(c *gin.Context) { // {{{
 	checkPoint = &request
 
 	c.JSON(http.StatusOK, conf.GiveResponse(checkPoint))
+} // }}}
+
+// ========== events
+
+func GetEvents(c *gin.Context) { // {{{
+	request, err := database.GetAllEvents()
+	if err != nil {
+		c.JSON(http.StatusNotFound, conf.GiveResponse(err))
+	}
+	c.JSON(http.StatusOK, conf.GiveResponse(request))
 } // }}}

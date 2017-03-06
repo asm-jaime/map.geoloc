@@ -71,7 +71,7 @@ func noRoute(c *gin.Context) { // {{{
 
 // ========== init server
 
-// NewEngine return the new gin server// {{{
+// NewEngine return the new gin server
 func (server *Server) NewEngine(port string) {
 	router := gin.Default()
 
@@ -98,37 +98,46 @@ func (server *Server) NewEngine(port string) {
 		// api v1
 		v1 := api.Group("v1")
 		{
-			// login/oauth
-			v1.GET("/login", LoginHandler)
-			v1.GET("/auth", AuthHandler)
-
-			rnd_point := v1.Group("rnd_point")
+			// auth
+			auth := v1.Group("auth")
 			{
-				rnd_point.GET("/get", GetRndPoint)
-				rnd_point.POST("/post", PostRndPoint)
+				auth.GET("/login", LoginHandler)
+				auth.GET("/auth", AuthHandler)
 			}
-			point := v1.Group("point")
+			// points
+			point := v1.Group("points")
 			{
-				point.GET("/get", GetPoints)
-				point.POST("/post", PostPoint)
+				// random point
+				point.GET("/random", GetRndPoint)
+				point.POST("/random", PostRndPoint)
+				// point
+				point.GET("/", GetPoints)
+				point.POST("/", PostPoint)
+				// point.PUT("/:id", PutPoint)
+				// point.DELETE("/:id", DeletePoint)
 			}
-			// user := v1.Group("user")
-			// {
-			// point.GET("/get", GetPoints)
-			// point.POST("/post", PostPoint)
-			// }
+			// events
+			event := v1.Group("events")
+			{
+				event.GET("/", GetEvents)
+			}
+			// users
+			user := v1.Group("users")
+			{
+				user.GET("/:id", GetUser)
+			}
 			//  group: here is API for authorized query
-			auth := v1.Group("/lock")
-			auth.Use(AuthorizeRequest())
+			lock := v1.Group("/lock")
+			lock.Use(AuthorizeRequest())
 			{
-				auth.GET("/test", lockTest)
+				lock.GET("/", lockTest)
 			}
 		}
 	}
 
 	// start server
 	router.Run(":" + port)
-} // }}}
+}
 
 func Start(args []string) (err error) { // {{{
 	// init config
