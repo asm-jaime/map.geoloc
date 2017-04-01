@@ -35,7 +35,7 @@ func (config *ServerConfig) SetDefault() {
 	config.MaxLimits = 1000
 	// adress
 	config.Host = "localhost"
-	config.Port = "8080"
+	config.Port = "8081"
 
 	config.IsProduction = false
 	config.KeyFile = "conf/clientid.google.json"

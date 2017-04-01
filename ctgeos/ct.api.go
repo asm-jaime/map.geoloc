@@ -24,19 +24,21 @@ func GetUser(c *gin.Context) {
 // ========== points
 
 func GetPoints(c *gin.Context) { // {{{
-	fmt.Printf("\ngeost: %v", geoState)
-	if len(geoState.Points) > 0 {
-		c.JSON(http.StatusOK, conf.GiveResponse(geoState.Points))
-	} else {
+	request, err := database.GetAllPoints()
+
+	fmt.Printf("\n##points: %v", request)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, msgState.Errors[http.StatusInternalServerError])
+	} else {
+		c.JSON(http.StatusOK, conf.GiveResponse(request))
 	}
 } // }}}
 
-func PostPoint(c *gin.Context) { // {{{
+func PostPointToGeostate(c *gin.Context) { // {{{
 	var request GeoPoint
 
 	err := c.BindJSON(&request)
-	// fmt.Printf("\nreq: %v", request)
+	fmt.Printf("\n## post point: %v\n", request)
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
@@ -48,26 +50,27 @@ func PostPoint(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
 } // }}}
 
+func PostPoint(c *gin.Context) { // {{{
+	var request GeoPoint
+
+	err := c.BindJSON(&request)
+	fmt.Printf("\n## post point: %v\n", request)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
+		return
+	}
+
+	err = database.InsertPoint(&request)
+
+	c.JSON(http.StatusOK, conf.GiveResponse(request))
+} // }}}
+
 // ========== random points
 
 func GetRndPoint(c *gin.Context) { // {{{
 	var request GeoPoint
 	request.SetRnd()
-
-	c.JSON(http.StatusOK, conf.GiveResponse(request))
-} // }}}
-
-func PostRndPoint(c *gin.Context) { // {{{
-	var request GeoPoint
-
-	err := c.BindJSON(&request)
-	if err != nil {
-		fmt.Print(err)
-		c.JSON(http.StatusBadRequest, msgState.Errors[http.StatusBadRequest])
-		return
-	}
-
-	geoState.Add(&request)
 
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
 } // }}}
@@ -90,6 +93,8 @@ func GetPointFromState(c *gin.Context) { // {{{
 	}
 } // }}}
 */
+
+// ========== check point
 
 func PutDistance(c *gin.Context) { // {{{
 	var request GeoPoint
@@ -132,6 +137,23 @@ func GetEvents(c *gin.Context) { // {{{
 	request, err := database.GetAllEvents()
 	if err != nil {
 		c.JSON(http.StatusNotFound, conf.GiveResponse(err))
+	}
+	c.JSON(http.StatusOK, conf.GiveResponse(request))
+} // }}}
+
+func PostEvent(c *gin.Context) { // {{{
+	var request Event
+
+	err := c.BindJSON(&request)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, conf.GiveResponse(err))
+		return
+	}
+
+	err = database.InsertEvent(&request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, conf.GiveResponse(err))
+		return
 	}
 	c.JSON(http.StatusOK, conf.GiveResponse(request))
 } // }}}

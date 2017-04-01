@@ -18,14 +18,9 @@ func AuthHandler(cont *gin.Context) {
 	session := sessions.Default(cont)
 	retrievedState := session.Get("state")
 	queryState := cont.Request.URL.Query().Get("state")
-	fmt.Print("retrievedState:\n")
-	fmt.Print(retrievedState)
-	fmt.Print("\nqueryState:\n")
-	fmt.Print(queryState)
-	fmt.Print("\n")
 
 	if retrievedState != queryState {
-		log.Printf("Invalid session state: retrieved: %s; Param: %s", retrievedState, queryState)
+		fmt.Printf("retrievedState: %v\n queryState: %v\n", retrievedState, queryState)
 		cont.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid session state."})
 		return
 	}
@@ -64,11 +59,10 @@ func AuthHandler(cont *gin.Context) {
 	log.Println(err)
 
 	seen := false
-	db := MongoDB{}
-	if _, mongoErr := db.GetUserOnMail(user.Email); mongoErr == nil {
+	if _, mongoErr := database.GetUserOnMail(user.Email); mongoErr == nil {
 		seen = true
 	} else {
-		err = db.InsertUser(&user)
+		err = database.InsertUser(&user)
 		if err != nil {
 			log.Println(err)
 			cont.JSON(http.StatusBadRequest, gin.H{"message": "Error while saving user. Please try again."})
@@ -88,15 +82,14 @@ func LoginHandler(cont *gin.Context) {
 	session.Save()
 
 	// response
-	link := confTemp.AuthCodeURL(state)
-	cont.JSON(http.StatusOK, gin.H{
-		"auth_url":     confTemp.Endpoint.AuthURL,
-		"client_id":    confTemp.ClientID,
-		"redirect_uri": confTemp.RedirectURL,
-		"scope":        strings.Join(confTemp.Scopes, " "),
-		"state":        state,
-		"link":         link,
-	})
+	scopes := strings.Join(confTemp.Scopes, " ")
+	linkStr := string(confTemp.Endpoint.AuthURL +
+		"?client_id=" + confTemp.ClientID +
+		"&redirect_uri=" + confTemp.RedirectURL +
+		"&response_type=code&scope=" + scopes +
+		"&state=" + state)
+
+	cont.JSON(http.StatusOK, gin.H{"link": linkStr})
 } // }}}
 
 // FieldHandler is a rudementary handler for logged in users {{{

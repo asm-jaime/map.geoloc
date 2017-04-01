@@ -14,7 +14,7 @@ func dbForTest() (database *MongoDB) { // {{{
 	return database
 } // }}}
 
-func TestSession(testT *testing.T) { // {{{
+func _TestSession(testT *testing.T) { // {{{
 	fmt.Print("\n== start TestSession ==\n")
 	testdb := dbForTest()
 
@@ -41,7 +41,7 @@ func TestSession(testT *testing.T) { // {{{
 	fmt.Print("\n== end TestSession ==\n")
 } // }}}
 
-func TestInit(testT *testing.T) { // {{{
+func _TestInit(testT *testing.T) { // {{{
 	testdb := dbForTest()
 	err := testdb.Init()
 	if err != nil {
@@ -62,7 +62,7 @@ func TestInit(testT *testing.T) { // {{{
 	}
 } // }}}
 
-func TestFillRnd(testT *testing.T) {
+func _TestFillRnd(testT *testing.T) { // {{{
 	num := 10
 
 	testdb := dbForTest()
@@ -93,7 +93,7 @@ func TestFillRnd(testT *testing.T) {
 		testT.Error("error GetAllEvents in FillRnd: ", err)
 	}
 	fmt.Printf("\n %v events, one from db: %v \n", len(events), events[0])
-}
+} // }}}
 
 func TestInsertPoint(testT *testing.T) {
 	testdb := dbForTest()

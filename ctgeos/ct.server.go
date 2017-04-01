@@ -64,8 +64,9 @@ func noRoute(c *gin.Context) { // {{{
 	if (path[1] != "") && (path[1] == "api") {
 		c.JSON(http.StatusNotFound, msgState.Errors[http.StatusNotFound])
 	} else {
-		// c.HTML(http.StatusOK, "index.html", "")
-		c.Redirect(http.StatusOK, "/")
+		fmt.Println("index")
+		c.HTML(http.StatusOK, "index.html", "")
+		// c.Redirect(http.StatusOK, "/")
 	}
 } // }}}
 
@@ -91,6 +92,7 @@ func (server *Server) NewEngine(port string) {
 
 	// frontend
 	router.Use(static.Serve("/", static.LocalFile("./public", true)))
+	router.LoadHTMLGlob("./public/index.html")
 
 	// set api routes
 	api := router.Group("api")
@@ -109,12 +111,11 @@ func (server *Server) NewEngine(port string) {
 			{
 				// random point
 				point.GET("/random", GetRndPoint)
-				point.POST("/random", PostRndPoint)
 				// point
 				point.GET("/", GetPoints)
 				point.POST("/", PostPoint)
-				// point.PUT("/:id", PutPoint)
-				// point.DELETE("/:id", DeletePoint)
+				// point.PUT("/", PutPoint)
+				// point.DELETE("/", DeletePoint)
 			}
 			// events
 			event := v1.Group("events")
@@ -135,6 +136,8 @@ func (server *Server) NewEngine(port string) {
 		}
 	}
 
+	// no route, bad url
+	router.NoRoute(noRoute)
 	// start server
 	router.Run(":" + port)
 }

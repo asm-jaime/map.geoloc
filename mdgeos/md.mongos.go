@@ -1,30 +1,62 @@
 package geoloc
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
-	"dvij.geoloc/conf"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
-// MongoDB interface for DataBase struct operations
+// ========== configure
+
+// MongoDB config struct
 type MongoDB struct {
-	config conf.DbConfig
+	Host             string
+	Port             string
+	Addrs            string
+	Database         string
+	Username         string
+	Password         string
+	EventTTLAfterEnd time.Duration
+	StdEventTTL      time.Duration
+	Info             *mgo.DialInfo
 }
+
+func (mongo *MongoDB) SetDefault() { // {{{
+	// host database params
+	mongo.Port = "27017"
+	mongo.Host = "localhost"
+	mongo.Addrs = mongo.Host + ":" + mongo.Port
+	// database
+	mongo.Database = "dviMongo"
+	// user for requests
+	mongo.Username = "jaime"
+	mongo.Password = "123456789"
+	// time live events
+	mongo.EventTTLAfterEnd = 1 * time.Second
+	mongo.StdEventTTL = 20 * time.Minute
+	mongo.Info = &mgo.DialInfo{
+		Addrs:    []string{mongo.Addrs},
+		Timeout:  60 * time.Second,
+		Database: mongo.Database,
+		Username: mongo.Username,
+		Password: mongo.Password,
+	}
+} // }}}
 
 // ========== sessions
 
 // GetSession return a new session if there is no previous one.
-func (mongodb *MongoDB) FreeSession() (session *mgo.Session, err error) { // {{{
-	session, err = mgo.Dial(mongodb.config.Host)
+func (mongo *MongoDB) FreeSession() (session *mgo.Session, err error) { // {{{
+	session, err = mgo.Dial(mongo.Host)
 	return session, err
 } // }}}
 
 // Session return a new session
-func (mongodb *MongoDB) Session() (session *mgo.Session, err error) { // {{{
-	session, err = mgo.DialWithInfo(mongodb.config.Info)
+func (mongo *MongoDB) Session() (session *mgo.Session, err error) { // {{{
+	session, err = mgo.DialWithInfo(mongo.Info)
 	return session, err
 } // }}}
 
@@ -41,32 +73,32 @@ func StartInitDB() { // {{{
 	}
 } // }}}
 
-func (mongodb *MongoDB) UpsertDefaultUser() (err error) { // {{{
+func (mongo *MongoDB) UpsertDefaultUser() (err error) { // {{{
 	session, err := mongodb.FreeSession()
 	if err != nil {
 		return err
 	}
 
 	user := &mgo.User{
-		Username: mongodb.config.Username,
-		Password: mongodb.config.Password,
+		Username: mongo.Username,
+		Password: mongo.Password,
 		Roles:    []mgo.Role{},
 	}
-	err = session.DB(mongodb.config.Database).UpsertUser(user)
+	err = session.DB(mongo.Database).UpsertUser(user)
 	if err != nil {
 		return err
 	}
 	return nil
 } // }}}
 
-func (mongodb *MongoDB) Drop() (err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) Drop() (err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return err
 	}
 
 	defer session.Close()
-	err = session.DB(mongodb.config.Database).DropDatabase()
+	err = session.DB(mongo.Database).DropDatabase()
 	if err != nil {
 		return err
 	}
@@ -74,7 +106,7 @@ func (mongodb *MongoDB) Drop() (err error) { // {{{
 	return nil
 } // }}}
 
-func (mongodb *MongoDB) Init() (err error) { // {{{
+func (mongo *MongoDB) Init() (err error) { // {{{
 	/* ====================
 	   Index params:
 	   Unique: causes MongoDB to reject all documents that contain a duplicate value
@@ -102,7 +134,7 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 
 	// ========== users
 
-	collection := session.DB(mongodb.config.Database).C("dviUsers")
+	collection := session.DB(mongo.Database).C("dviUsers")
 
 	index := mgo.Index{
 		Key:        []string{"name", "email", "description", "events", "groups"},
@@ -117,7 +149,7 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 
 	// ========== events
 
-	collection = session.DB(mongodb.config.Database).C("dviEvents")
+	collection = session.DB(mongo.Database).C("dviEvents")
 
 	index = mgo.Index{
 		Key:        []string{"name", "description", "users", "groups"},
@@ -141,7 +173,7 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 
 	// ========== groups
 
-	collection = session.DB(mongodb.config.Database).C("dviGroups")
+	collection = session.DB(mongo.Database).C("dviGroups")
 
 	index = mgo.Index{
 		Key:        []string{"name", "description", "users", "events"},
@@ -156,7 +188,7 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 
 	// ========== points
 
-	collection = session.DB(mongodb.config.Database).C("dviPoints")
+	collection = session.DB(mongo.Database).C("dviPoints")
 
 	index = mgo.Index{
 		Key:        []string{"token"},
@@ -181,8 +213,8 @@ func (mongodb *MongoDB) Init() (err error) { // {{{
 	return nil
 } // }}}
 
-func (mongodb *MongoDB) FillRnd(num int) (err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return err
 	}
@@ -191,7 +223,7 @@ func (mongodb *MongoDB) FillRnd(num int) (err error) { // {{{
 	userRefs := new(UserRefs)
 	userRef := &mgo.DBRef{}
 
-	collection := session.DB(mongodb.config.Database).C("dviUsers")
+	collection := session.DB(mongo.Database).C("dviUsers")
 	for i := 0; i < num; i++ {
 		user := new(User)
 		user.SetRnd()
@@ -204,7 +236,7 @@ func (mongodb *MongoDB) FillRnd(num int) (err error) { // {{{
 		*userRefs = append(*userRefs, *userRef)
 	}
 
-	collection = session.DB(mongodb.config.Database).C("dviEvents")
+	collection = session.DB(mongo.Database).C("dviEvents")
 	for i := 0; i < num; i++ {
 		event := new(Event)
 		event.SetRnd()
@@ -217,7 +249,7 @@ func (mongodb *MongoDB) FillRnd(num int) (err error) { // {{{
 		}
 	}
 
-	collection = session.DB(mongodb.config.Database).C("dviPoints")
+	collection = session.DB(mongo.Database).C("dviPoints")
 	point := new(GeoPoint)
 	for i := 0; i < num; i++ {
 		point.SetRnd()
@@ -232,70 +264,64 @@ func (mongodb *MongoDB) FillRnd(num int) (err error) { // {{{
 
 // ========== user
 
-func (mongodb *MongoDB) InsertUser(user *User) (err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) PostUser(user *User) (err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return err
 	}
 
 	defer session.Close()
 	if _, err := mongodb.GetUserOnMail(user.Email); err == nil {
-		return fmt.Errorf("User already exists!")
+		return errors.New("User already exists!")
 	}
 
-	collection := session.DB(mongodb.config.Database).C("dviUsers")
-	err = collection.Insert(user)
+	err := session.DB(mongo.Database).C("dviUsers").Insert(&user)
 	return err
 } // }}}
 
-func (mongodb *MongoDB) GetUserOnMail(Email string) (user User, err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) GetUserOnMail(Email string) (user User, err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return user, err
 	}
 
 	defer session.Close()
-	collection := session.DB(mongodb.config.Database).C("dviUsers")
-	err = collection.Find(bson.M{"email": Email}).One(&user)
+	err := session.DB(mongo.Database).C("dviUsers").Find(bson.M{"email": Email}).One(&user)
 	return user, err
 } // }}}
 
 // ========== event
 
-func (mongodb *MongoDB) GetAllEvents() (events Events, err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) GetAllEvents() (events Events, err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return events, err
 	}
-
 	defer session.Close()
 
-	err = session.DB(mongodb.config.Database).C("dviEvents").Find(bson.M{}).All(&events)
+	err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{}).All(&events)
 	return events, err
 } // }}}
 
-func (mongodb *MongoDB) InsertEvent(event *Event) (err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) PostEvent(event *Event) (err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return err
 	}
-
 	defer session.Close()
 
-	collection := session.DB(mongodb.config.Database).C("dviEvents")
-	err = collection.Insert(event)
+	collection := session.DB(mongo.Database).C("dviEvents").Insert(&event)
 	return err
 } // }}}
 
-func (mongodb *MongoDB) GetEvents() (events Events, err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) GetEvents() (events Events, err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return events, err
 	}
-
 	defer session.Close()
 
-	err = session.DB(mongodb.config.Database).C("dviEvents").Find(bson.M{}).All(&events)
+	err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{}).All(&events)
 	return events, err
 } // }}}
 
@@ -303,42 +329,39 @@ func (mongodb *MongoDB) GetEvents() (events Events, err error) { // {{{
 
 // ========== point
 
-func (mongodb *MongoDB) GetAllPoints() (points GeoPoints, err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) GetAllPoints() (points GeoPoints, err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return points, err
 	}
-
 	defer session.Close()
 
-	err = session.DB(mongodb.config.Database).C("dviPoints").Find(bson.M{}).All(&points)
+	err = session.DB(mongo.Database).C("dviPoints").Find(bson.M{}).All(&points)
 	return points, err
 } // }}}
 
-func (mongodb *MongoDB) InsertPoint(point *GeoPoint) (err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) PostPoint(point *GeoPoint) (err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return err
 	}
-
 	defer session.Close()
 
-	collection := session.DB(mongodb.config.Database).C("dviPoints")
-	err = collection.Insert(point)
+	collection := session.DB(mongo.Database).C("dviPoints").Insert(&point)
 	return err
 } // }}}
 
 // ========== geostate
 
-func (mongodb *MongoDB) InsertGeoState(geost *GeoState) (err error) { // {{{
-	session, err := mongodb.Session()
+func (mongo *MongoDB) InsertGeoState(geost *GeoState) (err error) { // {{{
+	session, err := mongo.Session()
 	if err != nil {
 		return err
 	}
 
 	defer session.Close()
 
-	collection := session.DB(mongodb.config.Database).C("dviPoints")
+	collection := session.DB(mongo.Database).C("dviPoints")
 	for point := range geost.Points {
 		err = collection.Insert(point)
 	}
