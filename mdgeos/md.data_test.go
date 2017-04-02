@@ -1,4 +1,4 @@
-package geoloc
+package mdgeos
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFillGeoState(testT *testing.T) {
+func _TestFillGeoState(testT *testing.T) {
 	const num = 2
 	geost := NewGeoState()
 	geost.SetRnd(num)

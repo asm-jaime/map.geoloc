@@ -1,4 +1,4 @@
-package geoloc
+package mdgeos
 
 import (
 	"fmt"
@@ -6,110 +6,154 @@ import (
 	"time"
 )
 
-func dbForTest() (database *MongoDB) { // {{{
-	database = &MongoDB{}
-	database.config.SetDefault()
-	database.config.Database = "test"
-	database.config.Info = database.config.MgoConfig()
-	return database
-} // }}}
+func dbTest() *MongoDB {
+	mg := &MongoDB{}
+	mg.SetDefault()
+	mg.Database = "test"
+	mg.Info = mg.MgoConfig()
+	return mg
+}
 
-func _TestSession(testT *testing.T) { // {{{
+func dbProduct() *MongoDB {
+	mg := &MongoDB{}
+	mg.SetDefault()
+	mg.Info = mg.MgoConfig()
+	return mg
+}
+
+func _TestSession(t *testing.T) { // {{{
 	fmt.Print("\n== start TestSession ==\n")
-	testdb := dbForTest()
+	tdb := dbTest()
 
-	free_session, err := testdb.FreeSession()
+	free_session, err := tdb.FreeSession()
 	defer free_session.Close()
 	fmt.Printf("\n free session: %v\n", free_session)
 	if err != nil {
-		testT.Error("error free session: ", err)
+		t.Error("error free session: ", err)
 		return
 	}
 
-	err = testdb.Init()
+	err = tdb.Init()
 	if err != nil {
-		testT.Error("error Init: ", err)
+		t.Error("error Init: ", err)
 		return
 	}
 
-	session, err := testdb.Session()
+	session, err := tdb.Session()
 	defer session.Close()
 	fmt.Printf("\ndefault session: %v\n", session)
 	if err != nil {
-		testT.Error("error session: ", err)
+		t.Error("error session: ", err)
 	}
 	fmt.Print("\n== end TestSession ==\n")
 } // }}}
 
-func _TestInit(testT *testing.T) { // {{{
-	testdb := dbForTest()
-	err := testdb.Init()
+func _TestInit(t *testing.T) { // {{{
+	tdb := dbTest()
+	err := tdb.Init()
 	if err != nil {
-		testT.Error("error Init : ", err)
+		t.Error("error Init : ", err)
 	}
 
-	err = testdb.FillRnd(10)
+	err = tdb.FillRnd(10)
 	if err != nil {
-		testT.Error("error FillRnd: ", err)
+		t.Error("error FillRnd: ", err)
 	}
 
-	points, err := testdb.GetAllPoints()
+	points, err := tdb.GetAllPoints()
 	if err != nil {
-		testT.Error("error GetAllPoints: ", err)
+		t.Error("error GetAllPoints: ", err)
 	}
 	if len(points) == 0 {
-		testT.Error("error, points was not added")
+		t.Error("error, points was not added")
 	}
 } // }}}
 
-func _TestFillRnd(testT *testing.T) { // {{{
+func _TestFillRnd(t *testing.T) { // {{{
 	num := 10
 
-	testdb := dbForTest()
-	err := testdb.Init()
+	tdb := dbTest()
+	err := tdb.Init()
 	if err != nil {
-		testT.Error("error Init in FillRnd: ", err)
+		t.Error("error Init in FillRnd: ", err)
 	}
 
 	// Normal insertion
 	start := time.Now()
 
-	err = testdb.FillRnd(num)
+	err = tdb.FillRnd(num)
 
 	elapsed := time.Since(start)
 	fmt.Printf("\nelapsed FillRnd: %v\n", elapsed)
 	if err != nil {
-		testT.Error("error FillRnd: ", err)
+		t.Error("error FillRnd: ", err)
 	}
 
-	points, err := testdb.GetAllPoints()
+	points, err := tdb.GetAllPoints()
 	if err != nil || len(points) == 0 {
-		testT.Error("error GetAllPoints in FillRnd: ", err)
+		t.Error("error GetAllPoints in FillRnd: ", err)
 	}
 	fmt.Printf("\n %v points, one from db: %v \n", len(points), points[0])
 
-	events, err := testdb.GetAllEvents()
+	events, err := tdb.GetAllEvents()
 	if err != nil || len(events) == 0 {
-		testT.Error("error GetAllEvents in FillRnd: ", err)
+		t.Error("error GetAllEvents in FillRnd: ", err)
 	}
 	fmt.Printf("\n %v events, one from db: %v \n", len(events), events[0])
 } // }}}
 
-func TestInsertPoint(testT *testing.T) {
-	testdb := dbForTest()
-	err := testdb.Init()
+func TestPoint(t *testing.T) {
+	tdb := dbTest()
+	err := tdb.Init()
 	if err != nil {
-		testT.Error("error InsertPoint: ", err)
+		t.Error("error post Point: ", err)
 	}
-	user := new(User)
-	user.SetRnd()
 
-	point := new(GeoPoint)
-	point.SetRnd()
+	// case get/post
+	{
+		point := GeoPoint{}
+		point.SetRnd()
 
-	err = testdb.InsertPoint(point)
-	if err != nil {
-		testT.Error("error InsertPoint: ", err)
+		err = tdb.PostPoint(&point)
+		if err != nil {
+			t.Error("error post Point: ", err)
+		}
+		spoint := GeoPoint{}
+		spoint.Token = point.Token
+		gpoint, err := tdb.GetPoint(&spoint)
+		if err != nil {
+			t.Error("error post Point: ", err)
+		}
+		if point.Id != gpoint.Id {
+			t.Error("error get post point: ", err)
+		}
+	}
+	// case post/update
+	{
+		point := GeoPoint{}
+		point.SetRnd()
+		err = tdb.PostPoint(&point)
+		if err != nil {
+			t.Error("err post 1: ", err)
+		}
+		// fmt.Printf("\npoint %v posted\n", point.Token)
+
+		spoint := GeoPoint{}
+		spoint.SetRnd()
+		spoint.Id = point.Id
+		err = tdb.UpdatePoint(&spoint)
+		if err != nil {
+			t.Error("err update: ", err)
+		}
+		// fmt.Printf("\nspoint %v updated\n", spoint.Token)
+
+		gpoint, err := tdb.GetPoint(&spoint)
+		if err != nil {
+			t.Error("err get: ", err)
+		}
+		if point.Id == gpoint.Id && point.Token == gpoint.Token {
+			t.Error("err points do not updated: ", err)
+		}
 	}
 }
 
@@ -125,6 +169,6 @@ func TestInsertPoint(testT *testing.T) {
 // elapsed = time.Since(start)
 // fmt.Printf("\nelapsed Bulk Insert: %v\n", elapsed)
 // if err != nil {
-// testT.Error("error FillRnd Insertion: ", err)
+// t.Error("error FillRnd Insertion: ", err)
 // }
 // fmt.Printf("res: %v", res)// }}}
