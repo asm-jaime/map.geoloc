@@ -1,6 +1,8 @@
 package ctgeos
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -43,7 +45,7 @@ func dbProduct() *md.MongoDB {
 	return mg
 }
 
-func TestGetPostData(t *testing.T) {
+func _TestGetPostData(t *testing.T) { // {{{
 	tmongo, coauth := dbTest()
 	err := tmongo.SetSession()
 	if err != nil {
@@ -77,4 +79,43 @@ func TestGetPostData(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+} // }}}
+
+func TestPoint(t *testing.T) {
+	tmongo, coauth := dbTest()
+	err := tmongo.SetSession()
+	if err != nil {
+		t.Error("error set session: ", err)
+	}
+
+	fmt.Println("start router")
+	testRouter := SetupRouter(tmongo, coauth)
+
+	// start make requests
+
+	point := md.GeoPoint{}
+
+	wg := &sync.WaitGroup{}
+	for count := 0; count < 6; count++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			point.SetRnd()
+			jpoint, _ := json.Marshal(point)
+			postPoint, _ := http.NewRequest("POST", "/api/v1/points/", bytes.NewBuffer(jpoint))
+
+			postPoint.Header.Set("X-Custom-Header", "myvalue")
+			postPoint.Header.Set("Content-Type", "application/json")
+
+			response := httptest.NewRecorder()
+			testRouter.ServeHTTP(response, postPoint)
+			fmt.Println(response.Body)
+		}()
+	}
+	wg.Wait()
+
+	// response := httptest.NewRecorder()
+	// testRouter.ServeHTTP(response, postPoint)
+	// fmt.Println(response.Body)
+
 }
