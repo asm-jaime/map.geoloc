@@ -301,6 +301,15 @@ func (mongo *MongoDB) PostUser(user *User) (err error) { // {{{
 	return err
 } // }}}
 
+func (mongo *MongoDB) UpdateUser(user *User) (err error) { // {{{
+	session := mongo.Session.Clone()
+	defer session.Close()
+
+	err = session.DB(mongo.Database).C("dviUsers").Update(
+		bson.M{"_id": user.Id}, &user)
+	return err
+} // }}}
+
 func (mongo *MongoDB) DelUser(user *User) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
@@ -309,15 +318,6 @@ func (mongo *MongoDB) DelUser(user *User) (err error) { // {{{
 		err = session.DB(mongo.Database).C("dviUsers").RemoveId(user.Id)
 		return err
 	}
-	return err
-} // }}}
-
-func (mongo *MongoDB) UpdateUser(user *User) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	err = session.DB(mongo.Database).C("dviUsers").Update(
-		bson.M{"_id": user.Id}, &user)
 	return err
 } // }}}
 
@@ -362,6 +362,15 @@ func (mongo *MongoDB) PostEvent(event *Event) (err error) { // {{{
 	return err
 } // }}}
 
+func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
+	session := mongo.Session.Clone()
+	defer session.Close()
+
+	err = session.DB(mongo.Database).C("dviPoints").Update(
+		bson.M{"_id": event.Id}, &event)
+	return err
+} // }}}
+
 func (mongo *MongoDB) DelEvent(event *Event) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
@@ -370,15 +379,6 @@ func (mongo *MongoDB) DelEvent(event *Event) (err error) { // {{{
 		err = session.DB(mongo.Database).C("dviEvents").RemoveId(event.Id)
 		return err
 	}
-	return err
-} // }}}
-
-func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	err = session.DB(mongo.Database).C("dviPoints").Update(
-		bson.M{"_id": event.Id}, &event)
 	return err
 } // }}}
 
@@ -423,6 +423,15 @@ func (mongo *MongoDB) PostGroup(group *Group) (err error) { // {{{
 	return err
 } // }}}
 
+func (mongo *MongoDB) UpdateGroup(group *Group) (err error) { // {{{
+	session := mongo.Session.Clone()
+	defer session.Close()
+
+	err = session.DB(mongo.Database).C("dviPoints").Update(
+		bson.M{"_id": group.Id}, &group)
+	return err
+} // }}}
+
 func (mongo *MongoDB) DelGroup(group *Group) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
@@ -431,15 +440,6 @@ func (mongo *MongoDB) DelGroup(group *Group) (err error) { // {{{
 		err = session.DB(mongo.Database).C("dviGroups").RemoveId(group.Id)
 		return err
 	}
-	return err
-} // }}}
-
-func (mongo *MongoDB) UpdateGroup(group *Group) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	err = session.DB(mongo.Database).C("dviPoints").Update(
-		bson.M{"_id": group.Id}, &group)
 	return err
 } // }}}
 
@@ -489,6 +489,15 @@ func (mongo *MongoDB) PostPoints(points *[]GeoPoint) (err error) { // {{{
 	return err
 } // }}}
 
+func (mongo *MongoDB) UpdatePoint(point *GeoPoint) (err error) { // {{{
+	session := mongo.Session.Clone()
+	defer session.Close()
+
+	err = session.DB(mongo.Database).C("dviPoints").Update(
+		bson.M{"_id": point.Id}, &point)
+	return err
+} // }}}
+
 func (mongo *MongoDB) DelPoint(point *GeoPoint) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
@@ -503,15 +512,6 @@ func (mongo *MongoDB) DelPoint(point *GeoPoint) (err error) { // {{{
 			"token": point.Token,
 		})
 	}
-	return err
-} // }}}
-
-func (mongo *MongoDB) UpdatePoint(point *GeoPoint) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	err = session.DB(mongo.Database).C("dviPoints").Update(
-		bson.M{"_id": point.Id}, &point)
 	return err
 } // }}}
 

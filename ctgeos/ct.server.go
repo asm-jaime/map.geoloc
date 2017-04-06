@@ -100,30 +100,51 @@ func SetupRouter(mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 	{
 		v1 := api.Group("v1")
 		{
+			user := v1.Group("users")
+			{
+				user.GET("/all", GetUsers)
+				user.GET("/", GetUser)
+				user.POST("/", PostUser)
+				user.PUT("/", PutUser)
+				user.DELETE("/", DelUser)
+			}
+			event := v1.Group("events")
+			{
+				event.GET("/all", GetEvents)
+				event.GET("/", GetEvent)
+				event.POST("/", PostEvent)
+				event.PUT("/", PutEvent)
+				event.DELETE("/", DelEvent)
+			}
+			group := v1.Group("groups")
+			{
+				group.GET("/all", GetGroups)
+				group.GET("/", GetGroup)
+				group.POST("/", PostGroup)
+				group.PUT("/", PutGroup)
+				group.DELETE("/", DelGroup)
+			}
+			point := v1.Group("points")
+			{
+				point.GET("/all", GetPoints)
+				point.GET("/", GetPoint)
+				point.POST("/", PostPoint)
+				point.POST("/state", PostPointToGeostate)
+				point.PUT("/", PutPoint)
+				point.DELETE("/", DelPoint)
+			}
+			rndpoint := v1.Group("rndpoints")
+			{
+				rndpoint.GET("/", GetRndPoint)
+			}
 			auth := v1.Group("auth")
 			{
 				auth.GET("/login", LoginHandler)
 				auth.GET("/auth", AuthHandler)
 			}
-			point := v1.Group("points")
-			{
-				point.GET("/random", GetRndPoint)
-				point.GET("/", GetPoints)
-				// point.POST("/", PostPoint)
-				// point.PUT("/", PutPoint)
-				// point.DELETE("/", DeletePoint)
-			}
-			// event := v1.Group("events")
-			// {
-			// event.GET("/", GetEvents)
-			// }
-			// user := v1.Group("users")
-			// {
-			// user.GET("/:id", GetUser)
-			// }
 			lock := v1.Group("/lock")
-			lock.Use(MiddleAuth(oauth))
 			{
+				lock.Use(MiddleAuth(oauth))
 				lock.GET("/", GetPoints)
 			}
 		}
@@ -133,7 +154,7 @@ func SetupRouter(mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 	return router
 }
 
-func Start(args []string) (err error) {
+func Start(args []string) (err error) { // {{{
 	// init config
 	config := conf.ServerConfig{}
 	config.SetDefault()
@@ -181,4 +202,4 @@ func Start(args []string) (err error) {
 	router := SetupRouter(&mongo, &coauth)
 	router.Run(config.Port)
 	return err
-}
+} // }}}
