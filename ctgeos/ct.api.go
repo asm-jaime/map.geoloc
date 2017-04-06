@@ -3,7 +3,7 @@ package ctgeos
 import (
 	"net/http"
 
-	"dvij.geoloc/conf"
+	// "dvij.geoloc/conf"
 	md "dvij.geoloc/mdgeos"
 	"github.com/gin-gonic/gin"
 )
@@ -19,7 +19,7 @@ func GetPoints(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't get points from db", "body": nil})
 	} else {
-		c.JSON(http.StatusOK, conf.GiveResponse(request))
+		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": req})
 	}
 }
 
@@ -61,12 +61,12 @@ func PostPoint(c *gin.Context) {
 */
 // ========== random points
 
-func GetRndPoint(c *gin.Context) { // {{{
-	var req GeoPoint
+func GetRndPoint(c *gin.Context) {
+	var req md.GeoPoint
 	req.SetRnd()
 
 	c.JSON(http.StatusOK, gin.H{"msg": "get rnd point complete", "body": req})
-} // }}}
+}
 
 // ========== check point
 /*

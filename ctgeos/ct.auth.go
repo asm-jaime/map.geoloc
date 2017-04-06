@@ -64,10 +64,8 @@ func AuthHandler(c *gin.Context) {
 		return
 	}
 
-	seen := false
-	if guser, err := mongo.GetUser(&user); err == nil {
-		seen = true
-	} else {
+	guser, err := mongo.GetUser(&user)
+	if err != nil {
 		err = mongo.PostUser(&user)
 		if err != nil {
 			log.Println(err)
@@ -83,7 +81,7 @@ func AuthHandler(c *gin.Context) {
 func LoginHandler(c *gin.Context) {
 	cauth, _ := c.Keys["oauth"].(*oauth2.Config)
 	// set state session for auth user.Email <=> state
-	state := RandToken(32)
+	state := md.RandToken(32)
 	session := sessions.Default(c)
 	session.Set("state", state)
 	session.Save()
@@ -104,7 +102,7 @@ func FieldHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	usermail := session.Get("user-id")
 	if usermail != "" {
-		c.JSON(http.StatusOK, gin.H{"msg": "get user-id succefull", "body": userID})
+		c.JSON(http.StatusOK, gin.H{"msg": "get user-id succefull", "body": usermail})
 	} else {
 		c.JSON(http.StatusNotFound, gin.H{"msg": "user-id didn't set", "body": nil})
 	}

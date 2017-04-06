@@ -17,19 +17,23 @@ import (
 
 // ========== declaration of configs
 
-var geoState *GeoState
+var geoState *md.GeoState
 
 // ========== middlewares
 
-func MiddleSetConfig(oauth *oauth2.Config, mongo *MongoDB) gin.HandlerFunc { // {{{
+func MiddleDB(mongo *md.MongoDB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Set("mongo", mongo)
-		c.Set("oauth", oauth)
-		c.Next()
+		err := mongo.SetSession()
+		if err != nil {
+			c.Abort()
+		} else {
+			c.Set("mongo", mongo)
+			c.Next()
+		}
 	}
-} // }}}
+}
 
-func MiddleAuthorize() gin.HandlerFunc { // {{{
+func MiddleAuth(oauth *oauth2.Config) gin.HandlerFunc { // {{{
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
 		v := session.Get("user-id")
@@ -37,6 +41,7 @@ func MiddleAuthorize() gin.HandlerFunc { // {{{
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
 			c.Abort()
 		}
+		c.Set("oauth", oauth)
 		c.Next()
 	}
 } // }}}
@@ -62,20 +67,19 @@ func MiddleCORS() gin.HandlerFunc { // {{{
 func MiddleNoRoute(c *gin.Context) { // {{{
 	path := strings.Split(c.Request.URL.Path, "/")
 	if (path[1] != "") && (path[1] == "api") {
-		c.JSON(http.StatusNotFound, msgState.Errors[http.StatusNotFound])
+		c.JSON(http.StatusNotFound, gin.H{"msg": "route not found", "body": nil})
 	} else {
 		fmt.Println("index")
 		c.HTML(http.StatusOK, "index.html", "")
-		// c.Redirect(http.StatusOK, "/")
 	}
 } // }}}
 
 // ========== init server
 
-func SetupRouter(oauth *oauth2.Config, mongo *MongoDB) *gin.Engine { // {{{
+func SetupRouter(mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 	router := gin.Default()
 	// support sessions
-	store := sessions.NewCookieStore([]byte(RandToken(64)))
+	store := sessions.NewCookieStore([]byte(md.RandToken(64)))
 	store.Options(sessions.Options{
 		Path:   "/",
 		MaxAge: 86400 * 7,
@@ -85,8 +89,9 @@ func SetupRouter(oauth *oauth2.Config, mongo *MongoDB) *gin.Engine { // {{{
 	router.Use(gin.Recovery())
 	router.Use(sessions.Sessions("goquestsession", store))
 	// headers middleware
-	router.Use(CORSMiddleware())
-	router.Use(MiddleSetConfig(&oauth, &mongo))
+	router.Use(MiddleCORS())
+	router.Use(MiddleDB(mongo))
+
 	// frontend
 	router.Use(static.Serve("/", static.LocalFile("./public", true)))
 	router.LoadHTMLGlob("./public/index.html")
@@ -104,28 +109,29 @@ func SetupRouter(oauth *oauth2.Config, mongo *MongoDB) *gin.Engine { // {{{
 			{
 				point.GET("/random", GetRndPoint)
 				point.GET("/", GetPoints)
-				point.POST("/", PostPoint)
+				// point.POST("/", PostPoint)
 				// point.PUT("/", PutPoint)
 				// point.DELETE("/", DeletePoint)
 			}
-			event := v1.Group("events")
-			{
-				event.GET("/", GetEvents)
-			}
-			user := v1.Group("users")
-			{
-				user.GET("/:id", GetUser)
-			}
+			// event := v1.Group("events")
+			// {
+			// event.GET("/", GetEvents)
+			// }
+			// user := v1.Group("users")
+			// {
+			// user.GET("/:id", GetUser)
+			// }
 			lock := v1.Group("/lock")
-			lock.Use(AuthorizeRequest())
+			lock.Use(MiddleAuth(oauth))
 			{
-				lock.GET("/", lockTest)
+				lock.GET("/", GetPoints)
 			}
 		}
 	}
-	router.NoRoute(noRoute)
+	router.NoRoute(MiddleNoRoute)
+
 	return router
-} // }}}
+}
 
 func Start(args []string) (err error) {
 	// init config
@@ -153,7 +159,7 @@ func Start(args []string) (err error) {
 	}
 
 	// init oauth config
-	coauth = &oauth2.Config{
+	coauth := oauth2.Config{
 		ClientID:     config.Cred.Cid,
 		ClientSecret: config.Cred.Csecret,
 		RedirectURL:  "http://" + config.Host + ":" + config.Port + "/auth",
@@ -172,7 +178,7 @@ func Start(args []string) (err error) {
 	fmt.Println("---------------")
 
 	// star server
-	router := SetupRouter(&mongo)
+	router := SetupRouter(&mongo, &coauth)
 	router.Run(config.Port)
 	return err
 }

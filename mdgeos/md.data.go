@@ -96,7 +96,7 @@ type (
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func rndStr(n int) string {
+func RndStr(n int) string {
 	rnd_str := make([]rune, n)
 	for i := range rnd_str {
 		rnd_str[i] = letterRunes[rand.Intn(len(letterRunes))]
@@ -169,7 +169,7 @@ func (geost *GeoState) GetPoint(id bson.ObjectId) (point GeoPoint, ok bool) {
 
 func (point *GeoPoint) SetRnd() { // {{{
 	point.Id = bson.NewObjectId()
-	point.Token = rndStr(8)
+	point.Token = RndStr(8)
 	point.Type = "Point"
 	point.Coordinates[0] = (rand.Float64() * 5) + 5
 	point.Coordinates[1] = (rand.Float64() * 5) + 5
@@ -187,9 +187,9 @@ func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) { // {{
 
 func (user *User) SetRnd() { // {{{
 	user.Id = bson.NewObjectId()
-	user.Name = "jhon " + rndStr(4)
-	user.Email = rndStr(6) + "@" + rndStr(4) + "." + rndStr(2)
-	user.Description = "descr: " + rndStr(10)
+	user.Name = "jhon " + RndStr(4)
+	user.Email = RndStr(6) + "@" + RndStr(4) + "." + RndStr(2)
+	user.Description = "descr: " + RndStr(10)
 } // }}}
 
 // ========== event
@@ -197,7 +197,7 @@ func (user *User) SetRnd() { // {{{
 func (event *Event) SetRnd() { // {{{
 	event.Id = bson.NewObjectId()
 	event.Name = "event: " + string(event.Id)
-	event.Description = "descr: " + rndStr(10)
+	event.Description = "descr: " + RndStr(10)
 	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
 } // }}}
 
@@ -206,5 +206,5 @@ func (event *Event) SetRnd() { // {{{
 func (group *Group) SetRnd() { // {{{
 	group.Id = bson.NewObjectId()
 	group.Name = "group: " + string(group.Id)
-	group.Description = "descr: " + rndStr(10)
+	group.Description = "descr: " + RndStr(10)
 } // }}}
