@@ -22,6 +22,7 @@ type MongoDB struct {
 	EventTTLAfterEnd time.Duration
 	StdEventTTL      time.Duration
 	Info             *mgo.DialInfo
+	Session          *mgo.Session
 }
 
 func (mongo *MongoDB) SetDefault() { // {{{
@@ -63,24 +64,39 @@ func (mongo *MongoDB) MgoConfig() *mgo.DialInfo {
 // ========== sessions
 
 // GetSession return a new session if there is no previous one.
-func (mongo *MongoDB) FreeSession() (session *mgo.Session, err error) { // {{{
-	session, err = mgo.Dial(mongo.Host)
-	return session, err
-} // }}}
+
+// func (mongo *MongoDB) FreeSession() (session *mgo.Session, err error) { // {{{
+// session, err = mgo.Dial(mongo.Host)
+// return session, err
+// } // }}}
 
 // Session return a new session
-func (mongo *MongoDB) Session() (session *mgo.Session, err error) { // {{{
-	session, err = mgo.DialWithInfo(mongo.Info)
-	return session, err
-} // }}}
+func (mongo *MongoDB) SetSession() (err error) {
+	mongo.Session, err = mgo.DialWithInfo(mongo.Info)
+	if err != nil {
+		mongo.Session, err = mgo.Dial(mongo.Host)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+// func (mongo *MongoDB) Session() (session *mgo.Session, err error) { // {{{
+// session, err = mgo.DialWithInfo(mongo.Info)
+// return session, err
+// } // }}}
+
+// func (mongo *MongoDB) Connect() (err error) { // {{{
+// session, err = mgo.DialWithInfo(mongo.Info)
+// return session, err
+// } // }}}
 
 // ========== database init
 
 func (mongo *MongoDB) UpsertDefaultUser() (err error) { // {{{
-	session, err := mongo.FreeSession()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
+	defer session.Close()
 
 	user := &mgo.User{
 		Username: mongo.Username,
@@ -95,17 +111,13 @@ func (mongo *MongoDB) UpsertDefaultUser() (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) Drop() (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
-
+	session := mongo.Session.Clone()
 	defer session.Close()
+
 	err = session.DB(mongo.Database).DropDatabase()
 	if err != nil {
 		return err
 	}
-
 	return nil
 } // }}}
 
@@ -117,11 +129,6 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	   TTL: expire data after a period of time.
 	   ==================== */
 
-	session, err := mongo.FreeSession()
-	if err != nil {
-		return err
-	}
-
 	err = mongo.Drop()
 	if err != nil {
 		fmt.Printf("\n drop database error: %v\n", err)
@@ -132,6 +139,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 		return err
 	}
 
+	session := mongo.Session.Clone()
 	defer session.Close()
 	session.EnsureSafe(&mgo.Safe{})
 
@@ -217,10 +225,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	userRefs := new([]mgo.DBRef)
@@ -262,10 +267,7 @@ func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 // ========== user
 
 func (mongo *MongoDB) GetUsers() (users []User, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return users, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviUsers").Find(bson.M{}).All(&users)
@@ -273,10 +275,7 @@ func (mongo *MongoDB) GetUsers() (users []User, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) GetUser(user *User) (guser User, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return guser, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if user.Email != "" {
@@ -291,13 +290,10 @@ func (mongo *MongoDB) GetUser(user *User) (guser User, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) PostUser(user *User) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 
 	defer session.Close()
-	if _, err := mongo.GetUserOnMail(user.Email); err == nil {
+	if _, err := mongo.GetUser(user); err == nil {
 		return errors.New("User already exists!")
 	}
 
@@ -306,10 +302,7 @@ func (mongo *MongoDB) PostUser(user *User) (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) DelUser(user *User) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if user.Id.Hex() != "" {
@@ -320,10 +313,7 @@ func (mongo *MongoDB) DelUser(user *User) (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) UpdateUser(user *User) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviUsers").Update(
@@ -334,10 +324,7 @@ func (mongo *MongoDB) UpdateUser(user *User) (err error) { // {{{
 // ========== event
 
 func (mongo *MongoDB) GetEvents() (events []Event, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return events, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{}).All(&events)
@@ -345,10 +332,7 @@ func (mongo *MongoDB) GetEvents() (events []Event, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) GetEvent(event *Event) (gevent Event, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return gevent, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if event.Id.Hex() != "" {
@@ -359,33 +343,27 @@ func (mongo *MongoDB) GetEvent(event *Event) (gevent Event, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) PostEvents(events *[]Event) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
+
 	for _, event := range *events {
+		event.Id = bson.NewObjectId()
 		err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
 	}
 	return err
 } // }}}
 
 func (mongo *MongoDB) PostEvent(event *Event) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
+	event.Id = bson.NewObjectId()
 	err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
 	return err
 } // }}}
 
 func (mongo *MongoDB) DelEvent(event *Event) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if event.Id.Hex() != "" {
@@ -396,10 +374,7 @@ func (mongo *MongoDB) DelEvent(event *Event) (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviPoints").Update(
@@ -410,10 +385,7 @@ func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
 // ========== group
 
 func (mongo *MongoDB) GetGroups() (groups []Group, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return groups, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviGroups").Find(bson.M{}).All(&groups)
@@ -421,10 +393,7 @@ func (mongo *MongoDB) GetGroups() (groups []Group, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) GetGroup(group *Group) (ggroup Group, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return ggroup, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if group.Id.Hex() != "" {
@@ -435,33 +404,27 @@ func (mongo *MongoDB) GetGroup(group *Group) (ggroup Group, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) PostGroups(groups *[]Group) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
+
 	for _, group := range *groups {
+		group.Id = bson.NewObjectId()
 		err = session.DB(mongo.Database).C("dviGroups").Insert(&group)
 	}
 	return err
 } // }}}
 
 func (mongo *MongoDB) PostGroup(group *Group) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
+	group.Id = bson.NewObjectId()
 	err = session.DB(mongo.Database).C("dviGroups").Insert(&group)
 	return err
 } // }}}
 
 func (mongo *MongoDB) DelGroup(group *Group) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if group.Id.Hex() != "" {
@@ -472,10 +435,7 @@ func (mongo *MongoDB) DelGroup(group *Group) (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) UpdateGroup(group *Group) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviPoints").Update(
@@ -486,10 +446,7 @@ func (mongo *MongoDB) UpdateGroup(group *Group) (err error) { // {{{
 // ========== point
 
 func (mongo *MongoDB) GetPoints() (points []GeoPoint, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return points, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviPoints").Find(bson.M{}).All(&points)
@@ -497,10 +454,7 @@ func (mongo *MongoDB) GetPoints() (points []GeoPoint, err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) GetPoint(point *GeoPoint) (gpoint GeoPoint, err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return gpoint, err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if point.Token != "" {
@@ -516,33 +470,27 @@ func (mongo *MongoDB) GetPoint(point *GeoPoint) (gpoint GeoPoint, err error) { /
 } // }}}
 
 func (mongo *MongoDB) PostPoint(point *GeoPoint) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
+	point.Id = bson.NewObjectId()
 	err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
 	return err
 } // }}}
 
 func (mongo *MongoDB) PostPoints(points *[]GeoPoint) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
+
 	for _, point := range *points {
+		point.Id = bson.NewObjectId()
 		err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
 	}
 	return err
 } // }}}
 
 func (mongo *MongoDB) DelPoint(point *GeoPoint) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if point.Id.Hex() != "" {
@@ -559,10 +507,7 @@ func (mongo *MongoDB) DelPoint(point *GeoPoint) (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) UpdatePoint(point *GeoPoint) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviPoints").Update(
@@ -570,17 +515,17 @@ func (mongo *MongoDB) UpdatePoint(point *GeoPoint) (err error) { // {{{
 	return err
 } // }}}
 
+// ========== check point
+
 // ========== geostate
 
-func (mongo *MongoDB) InsertGeoState(geost *GeoState) (err error) { // {{{
-	session, err := mongo.Session()
-	if err != nil {
-		return err
-	}
+func (mongo *MongoDB) UpdateGeoState(geost *GeoState) (err error) { // {{{
+	session := mongo.Session.Clone()
 	defer session.Close()
 
 	for _, point := range geost.Points {
-		err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
+		err = session.DB(mongo.Database).C("dviPoints").Update(
+			bson.M{"_id": point.Id}, &point)
 	}
 
 	return err

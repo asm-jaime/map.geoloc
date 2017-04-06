@@ -9,6 +9,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"dvij.geoloc/conf"
+	md "dvij.geoloc/mdgeos"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
@@ -16,32 +17,31 @@ import (
 
 // ========== declaration of configs
 
-// Server for you
-type Server struct{}
-
-// configure vars
-var config *conf.ServerConfig
-var confTemp *oauth2.Config
-var database *MongoDB
-var msgState *conf.MsgState
 var geoState *GeoState
-var checkPoint *GeoPoint
 
 // ========== middlewares
 
-func AuthorizeRequest() gin.HandlerFunc { // {{{
-	return func(thisContext *gin.Context) {
-		session := sessions.Default(thisContext)
-		v := session.Get("user-id")
-		if v == nil {
-			thisContext.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
-			thisContext.Abort()
-		}
-		thisContext.Next()
+func MiddleSetConfig(oauth *oauth2.Config, mongo *MongoDB) gin.HandlerFunc { // {{{
+	return func(c *gin.Context) {
+		c.Set("mongo", mongo)
+		c.Set("oauth", oauth)
+		c.Next()
 	}
 } // }}}
 
-func CORSMiddleware() gin.HandlerFunc { // {{{
+func MiddleAuthorize() gin.HandlerFunc { // {{{
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		v := session.Get("user-id")
+		if v == nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+			c.Abort()
+		}
+		c.Next()
+	}
+} // }}}
+
+func MiddleCORS() gin.HandlerFunc { // {{{
 	return func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Max-Age", "86400")
@@ -59,7 +59,7 @@ func CORSMiddleware() gin.HandlerFunc { // {{{
 	}
 } // }}}
 
-func noRoute(c *gin.Context) { // {{{
+func MiddleNoRoute(c *gin.Context) { // {{{
 	path := strings.Split(c.Request.URL.Path, "/")
 	if (path[1] != "") && (path[1] == "api") {
 		c.JSON(http.StatusNotFound, msgState.Errors[http.StatusNotFound])
@@ -72,62 +72,50 @@ func noRoute(c *gin.Context) { // {{{
 
 // ========== init server
 
-// NewEngine return the new gin server
-func (server *Server) NewEngine(port string) {
+func SetupRouter(oauth *oauth2.Config, mongo *MongoDB) *gin.Engine { // {{{
 	router := gin.Default()
-
 	// support sessions
 	store := sessions.NewCookieStore([]byte(RandToken(64)))
 	store.Options(sessions.Options{
 		Path:   "/",
 		MaxAge: 86400 * 7,
 	})
-
 	// router
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 	router.Use(sessions.Sessions("goquestsession", store))
 	// headers middleware
 	router.Use(CORSMiddleware())
-
+	router.Use(MiddleSetConfig(&oauth, &mongo))
 	// frontend
 	router.Use(static.Serve("/", static.LocalFile("./public", true)))
 	router.LoadHTMLGlob("./public/index.html")
-
 	// set api routes
 	api := router.Group("api")
 	{
-		// api v1
 		v1 := api.Group("v1")
 		{
-			// auth
 			auth := v1.Group("auth")
 			{
 				auth.GET("/login", LoginHandler)
 				auth.GET("/auth", AuthHandler)
 			}
-			// points
 			point := v1.Group("points")
 			{
-				// random point
 				point.GET("/random", GetRndPoint)
-				// point
 				point.GET("/", GetPoints)
 				point.POST("/", PostPoint)
 				// point.PUT("/", PutPoint)
 				// point.DELETE("/", DeletePoint)
 			}
-			// events
 			event := v1.Group("events")
 			{
 				event.GET("/", GetEvents)
 			}
-			// users
 			user := v1.Group("users")
 			{
 				user.GET("/:id", GetUser)
 			}
-			//  group: here is API for authorized query
 			lock := v1.Group("/lock")
 			lock.Use(AuthorizeRequest())
 			{
@@ -135,24 +123,19 @@ func (server *Server) NewEngine(port string) {
 			}
 		}
 	}
-
-	// no route, bad url
 	router.NoRoute(noRoute)
-	// start server
-	router.Run(":" + port)
-}
+	return router
+} // }}}
 
-func Start(args []string) (err error) { // {{{
+func Start(args []string) (err error) {
 	// init config
 	config := conf.ServerConfig{}
 	config.SetDefault()
+	mongo := md.MongoDB{}
+	mongo.SetDefault()
 
-	msgState = conf.NewMsgState()
-	msgState.SetErrors()
-	geoState = NewGeoState()
-
-	database = &MongoDB{}
-	database.config.SetDefault()
+	// the only global state with no context
+	geoState = md.NewGeoState()
 
 	// processing console arguments
 	if len(args) > 3 { // set port
@@ -170,7 +153,7 @@ func Start(args []string) (err error) { // {{{
 	}
 
 	// init oauth config
-	confTemp = &oauth2.Config{
+	coauth = &oauth2.Config{
 		ClientID:     config.Cred.Cid,
 		ClientSecret: config.Cred.Csecret,
 		RedirectURL:  "http://" + config.Host + ":" + config.Port + "/auth",
@@ -188,20 +171,8 @@ func Start(args []string) (err error) { // {{{
 	fmt.Println("Selected filekey: " + config.KeyFile)
 	fmt.Println("---------------")
 
-	// err = database.FillRnd(5)
-	// if err != nil {
-	// fmt.Printf("err on filling: %v", err)
-	// }
-
-	// events, err := database.GetAllEvents()
-	// fmt.Printf("ev: %v\n", events)
-
-	// points, err := database.GetAllPoints()
-	// fmt.Printf("pt: %v\n", points)
-
 	// star server
-	server := new(Server)
-	server.NewEngine(config.Port)
-
+	router := SetupRouter(&mongo)
+	router.Run(config.Port)
 	return err
-} // }}}
+}

@@ -8,93 +8,104 @@ import (
 	"net/http"
 	"strings"
 
+	md "dvij.geoloc/mdgeos"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 )
 
 // AuthHandler handles authentication of a user and initiates a session {{{
-func AuthHandler(cont *gin.Context) {
-	session := sessions.Default(cont)
-	retrievedState := session.Get("state")
-	queryState := cont.Request.URL.Query().Get("state")
+func AuthHandler(c *gin.Context) {
+	mongo, ok := c.Keys["db"].(*md.MongoDB)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "db not available", "body": nil})
+	}
+	coauth, _ := c.Keys["oauth"].(*oauth2.Config)
 
-	if retrievedState != queryState {
-		fmt.Printf("retrievedState: %v\n queryState: %v\n", retrievedState, queryState)
-		cont.JSON(http.StatusUnauthorized, gin.H{"message": "Invalid session state."})
+	session := sessions.Default(c)
+	ret_state := session.Get("state")
+	req_state := c.Request.URL.Query().Get("state")
+
+	if ret_state != req_state {
+		fmt.Printf("retrievedState: %v\n queryState: %v\n", ret_state, req_state)
+		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Invalid session state."})
 		return
 	}
 
-	code := cont.Request.URL.Query().Get("code")
-	tok, err := confTemp.Exchange(oauth2.NoContext, code)
+	code := c.Request.URL.Query().Get("code")
+	token, err := coauth.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		log.Println(err)
-		cont.JSON(http.StatusBadRequest, gin.H{"message": "Login failed. Please try again."})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Login failed. Please try again."})
 		return
 	}
 
-	client := confTemp.Client(oauth2.NoContext, tok)
+	client := coauth.Client(oauth2.NoContext, token)
 	userinfo, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
 		log.Println(err)
-		cont.AbortWithStatus(http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "bad request on google.com", "body": nil})
 		return
 	}
 
 	defer userinfo.Body.Close()
 	data, _ := ioutil.ReadAll(userinfo.Body)
-	user := User{}
+	user := md.User{}
 	if err = json.Unmarshal(data, &user); err != nil {
 		log.Println(err)
-		cont.JSON(http.StatusBadRequest, gin.H{"message": "Error marshalling response. Please try agian."})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Error marshalling response. Please try agian."})
 		return
 	}
 
 	session.Set("user-id", user.Email)
 	err = session.Save()
 	if err != nil {
-		cont.JSON(http.StatusBadRequest, gin.H{"message": "Error while saving session. Please try again."})
+		c.JSON(http.StatusBadRequest, gin.H{"msg": "Error save session. Please try again."})
 		return
 	}
-	log.Println(err)
 
 	seen := false
-	if _, mongoErr := database.GetUserOnMail(user.Email); mongoErr == nil {
+	if guser, err := mongo.GetUser(&user); err == nil {
 		seen = true
 	} else {
-		err = database.InsertUser(&user)
+		err = mongo.PostUser(&user)
 		if err != nil {
 			log.Println(err)
-			cont.JSON(http.StatusBadRequest, gin.H{"message": "Error while saving user. Please try again."})
+			c.JSON(http.StatusBadRequest, gin.H{"msg": "Error save user. Please try again."})
 			return
 		}
 	}
 
-	cont.JSON(http.StatusOK, gin.H{"email": user.Email, "seen": seen})
+	c.JSON(http.StatusOK, gin.H{"msg": "user authorized", "body": guser})
 } // }}}
 
 // LoginHandler handles the login procedure {{{
-func LoginHandler(cont *gin.Context) {
-	// session
+func LoginHandler(c *gin.Context) {
+	cauth, _ := c.Keys["oauth"].(*oauth2.Config)
+	// set state session for auth user.Email <=> state
 	state := RandToken(32)
-	session := sessions.Default(cont)
+	session := sessions.Default(c)
 	session.Set("state", state)
 	session.Save()
 
 	// response
-	scopes := strings.Join(confTemp.Scopes, " ")
-	linkStr := string(confTemp.Endpoint.AuthURL +
-		"?client_id=" + confTemp.ClientID +
-		"&redirect_uri=" + confTemp.RedirectURL +
+	scopes := strings.Join(cauth.Scopes, " ")
+	link := string(cauth.Endpoint.AuthURL +
+		"?client_id=" + cauth.ClientID +
+		"&redirect_uri=" + cauth.RedirectURL +
 		"&response_type=code&scope=" + scopes +
 		"&state=" + state)
 
-	cont.JSON(http.StatusOK, gin.H{"link": linkStr})
+	c.JSON(http.StatusOK, gin.H{"msg": "", "body": link})
 } // }}}
 
 // FieldHandler is a rudementary handler for logged in users {{{
-func FieldHandler(cont *gin.Context) {
-	session := sessions.Default(cont)
-	userID := session.Get("user-id")
-	cont.JSON(http.StatusOK, gin.H{"user": userID})
+func FieldHandler(c *gin.Context) {
+	session := sessions.Default(c)
+	usermail := session.Get("user-id")
+	if usermail != "" {
+		c.JSON(http.StatusOK, gin.H{"msg": "get user-id succefull", "body": userID})
+	} else {
+		c.JSON(http.StatusNotFound, gin.H{"msg": "user-id didn't set", "body": nil})
+	}
 } // }}}

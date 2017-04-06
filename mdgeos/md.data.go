@@ -22,63 +22,73 @@ type DistanceReq struct {
 	Distance float64 `form:"distance" binding:"required"`
 }
 
-// ========== Users
+// ========== Users{{{
 
-type User struct {
-	Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-	Name        string        `form:"name" binding:"required" bson:"name"`
-	Email       string        `form:"email" binding:"required" bson:"email"`
-	Description string        `form:"description" binding:"required" bson:"description"`
-	Events      []mgo.DBRef   `form:"events" bson:"events,omitempty"`
-	Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
-}
+type (
+	User struct {
+		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name        string        `form:"name" binding:"required" bson:"name"`
+		Email       string        `form:"email" binding:"required" bson:"email"`
+		Description string        `form:"description" binding:"required" bson:"description"`
+		Events      []mgo.DBRef   `form:"events" bson:"events,omitempty"`
+		Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
+	}
+)
+
+// }}}
 
 // ========== Events {{{
 
 // Event struct for processing events
-type Event struct {
-	Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-	Name        string        `form:"name" binding:"required" bson:"name"`
-	Description string        `form:"description" binding:"required" bson:"description"`
-	TTLEvent    time.Time     `form:"ttl" bson:"ttl,omitempty"`
-	Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
-	Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
-}
+type (
+	Event struct {
+		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name        string        `form:"name" binding:"required" bson:"name"`
+		Description string        `form:"description" binding:"required" bson:"description"`
+		TTLEvent    time.Time     `form:"ttl" bson:"ttl,omitempty"`
+		Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
+		Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
+	}
+)
 
 // }}}
 
 // ========== Groups {{{
 
-type Group struct {
-	Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-	Name        string        `form:"name" binding:"required"`
-	Description string        `form:"description" binding:"required"`
-	Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
-	Events      []mgo.DBRef   `form:"events" bson:"events,omitempty"`
-}
+type (
+	Group struct {
+		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name        string        `form:"name" binding:"required"`
+		Description string        `form:"description" binding:"required"`
+		Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
+		Events      []mgo.DBRef   `form:"events" bson:"events,omitempty"`
+	}
 
-type Groups []Group
-type GroupRefs []mgo.DBRef
+	Groups    []Group
+	GroupRefs []mgo.DBRef
+)
 
 // }}}
 
 // ========== Points {{{
 
-// GeoPoint for example {lat: 1.011111, lng: 1.0000450}
-type GeoPoint struct {
-	Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-	Type        string        `bson:"-"`
-	Token       string        `form:"token" binding:"required" bson:"token,omitempty"`
-	Coordinates [2]float64    `form:"coordinates" binding:"required" bson:"coordinates"`
-}
+// id GeoPoint should be id user/event/group
+type (
+	GeoPoint struct {
+		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Type        string        `bson:"-"`
+		Token       string        `form:"token" binding:"required" bson:"token,omitempty"`
+		Coordinates [2]float64    `form:"coordinates" binding:"required" bson:"coordinates"`
+	}
 
-type GeoPoints []GeoPoint
+	GeoPoints []GeoPoint
 
-// GeoState is map(array) of points
-type GeoState struct {
-	Points map[bson.ObjectId]GeoPoint
-	sync.RWMutex
-}
+	// GeoState is map(array) of points
+	GeoState struct {
+		Points map[bson.ObjectId]GeoPoint
+		sync.RWMutex
+	}
+)
 
 // }}}
 
@@ -147,7 +157,7 @@ func (geost *GeoState) Len() int {
 	return len(geost.Points)
 } // }}}
 
-// GetPoint new point with token// {{{
+// GetPoint new point with token {{{
 func (geost *GeoState) GetPoint(id bson.ObjectId) (point GeoPoint, ok bool) {
 	geost.Lock()
 	defer geost.Unlock()
@@ -155,21 +165,15 @@ func (geost *GeoState) GetPoint(id bson.ObjectId) (point GeoPoint, ok bool) {
 	return point, ok
 } // }}}
 
-// ========== GeoPoint methods
+// ========== GeoPoint
 
-func NewGeoPoint() *GeoPoint { // {{{
-	point := new(GeoPoint)
-	point.SetRnd()
-	return point
-} // }}}
-
-func (point *GeoPoint) SetRnd() {
+func (point *GeoPoint) SetRnd() { // {{{
 	point.Id = bson.NewObjectId()
 	point.Token = rndStr(8)
 	point.Type = "Point"
 	point.Coordinates[0] = (rand.Float64() * 5) + 5
 	point.Coordinates[1] = (rand.Float64() * 5) + 5
-}
+} // }}}
 
 // GetDistance set random data to a point
 func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) { // {{{
@@ -179,29 +183,23 @@ func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) { // {{
 	return distance
 } // }}}
 
-// ========== User
+// ========== user
 
-func (user *User) SetRnd() {
+func (user *User) SetRnd() { // {{{
 	user.Id = bson.NewObjectId()
 	user.Name = "jhon " + rndStr(4)
 	user.Email = rndStr(6) + "@" + rndStr(4) + "." + rndStr(2)
 	user.Description = "descr: " + rndStr(10)
-}
-
-// ========== Event
-
-func NewEvent() *Event { // {{{
-	event := new(Event)
-	event.SetRnd()
-	return event
 } // }}}
 
-func (event *Event) SetRnd() {
+// ========== event
+
+func (event *Event) SetRnd() { // {{{
 	event.Id = bson.NewObjectId()
 	event.Name = "event: " + string(event.Id)
 	event.Description = "descr: " + rndStr(10)
 	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
-}
+} // }}}
 
 // ========== groups
 

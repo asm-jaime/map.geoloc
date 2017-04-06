@@ -22,30 +22,13 @@ func dbProduct() *MongoDB {
 }
 
 func _TestSession(t *testing.T) { // {{{
-	fmt.Print("\n== start TestSession ==\n")
-	tdb := dbTest()
-
-	free_session, err := tdb.FreeSession()
-	defer free_session.Close()
-	fmt.Printf("\n free session: %v\n", free_session)
+	mongo := dbTest()
+	err := mongo.SetSession()
+	// fmt.Printf("\n free session: %v\n", mongo.Session)
 	if err != nil {
 		t.Error("error free session: ", err)
 		return
 	}
-
-	err = tdb.Init()
-	if err != nil {
-		t.Error("error Init: ", err)
-		return
-	}
-
-	session, err := tdb.Session()
-	defer session.Close()
-	fmt.Printf("\ndefault session: %v\n", session)
-	if err != nil {
-		t.Error("error session: ", err)
-	}
-	fmt.Print("\n== end TestSession ==\n")
 } // }}}
 
 func _TestInit(t *testing.T) { // {{{
@@ -60,7 +43,7 @@ func _TestInit(t *testing.T) { // {{{
 		t.Error("error FillRnd: ", err)
 	}
 
-	points, err := tdb.GetAllPoints()
+	points, err := tdb.GetPoints()
 	if err != nil {
 		t.Error("error GetAllPoints: ", err)
 	}
@@ -89,13 +72,13 @@ func _TestFillRnd(t *testing.T) { // {{{
 		t.Error("error FillRnd: ", err)
 	}
 
-	points, err := tdb.GetAllPoints()
+	points, err := tdb.GetPoints()
 	if err != nil || len(points) == 0 {
 		t.Error("error GetAllPoints in FillRnd: ", err)
 	}
 	fmt.Printf("\n %v points, one from db: %v \n", len(points), points[0])
 
-	events, err := tdb.GetAllEvents()
+	events, err := tdb.GetEvents()
 	if err != nil || len(events) == 0 {
 		t.Error("error GetAllEvents in FillRnd: ", err)
 	}
@@ -104,7 +87,12 @@ func _TestFillRnd(t *testing.T) { // {{{
 
 func TestPoint(t *testing.T) {
 	tdb := dbTest()
-	err := tdb.Init()
+	err := tdb.SetSession()
+	if err != nil {
+		t.Error("error set session: ", err)
+	}
+
+	err = tdb.Init()
 	if err != nil {
 		t.Error("error post Point: ", err)
 	}
