@@ -380,16 +380,16 @@ func PostPoint(c *gin.Context) { // {{{
 		return
 	}
 
-	err = mongo.PostPoint(&req)
+	point, err := mongo.PostPoint(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": req})
+	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": point})
 } // }}}
 
-func PutPoint(c *gin.Context) { // {{{
+func PutPoint(c *gin.Context) {
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
@@ -404,11 +404,14 @@ func PutPoint(c *gin.Context) { // {{{
 	if req.Id.Hex() != "" {
 		err = mongo.UpdatePoint(&req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
-			return
+			point, err := mongo.PostPoint(&req)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": point})
+				return
+			}
 		}
 	} else {
-		err = mongo.PostPoint(&req)
+		_, err := mongo.PostPoint(&req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 			return
@@ -416,7 +419,7 @@ func PutPoint(c *gin.Context) { // {{{
 	}
 
 	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": req})
-} // }}}
+}
 
 func DelPoint(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
@@ -440,6 +443,12 @@ func DelPoint(c *gin.Context) { // {{{
 } // }}}
 
 func PostPointToGeostate(c *gin.Context) { // {{{
+	vars, ok := c.Keys["vars"].(*Vars)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't get vars from context", "body": nil})
+		return
+	}
+
 	var req md.GeoPoint
 	err := c.Bind(&req)
 
@@ -447,7 +456,7 @@ func PostPointToGeostate(c *gin.Context) { // {{{
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
-	geoState.Add(&req)
+	vars.geoState.Add(&req)
 	c.JSON(http.StatusOK, gin.H{"msg": "post point to geostate complete", "body": req})
 } // }}}
 

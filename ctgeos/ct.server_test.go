@@ -16,12 +16,13 @@ import (
 	md "dvij.geoloc/mdgeos"
 )
 
-func dbTest() (*md.MongoDB, *oauth2.Config) {
+func dbTest() (*Vars, *md.MongoDB, *oauth2.Config) { // {{{
 	mg := &md.MongoDB{}
 	mg.SetDefault()
 	mg.Database = "test"
 	mg.Info = mg.MgoConfig()
 
+	vars := &Vars{geoState: *md.NewGeoState()}
 	config := conf.ServerConfig{}
 	config.SetDefault()
 
@@ -35,37 +36,29 @@ func dbTest() (*md.MongoDB, *oauth2.Config) {
 		Endpoint: google.Endpoint,
 	}
 
-	return mg, coauth
-}
+	return vars, mg, coauth
+} // }}}
 
-func dbProduct() *md.MongoDB {
+func dbProduct() *md.MongoDB { // {{{
 	mg := &md.MongoDB{}
 	mg.SetDefault()
 	mg.Info = mg.MgoConfig()
 	return mg
-}
+} // }}}
 
 func _TestGetPostData(t *testing.T) { // {{{
-	tmongo, coauth := dbTest()
+	vars, tmongo, coauth := dbTest()
 	err := tmongo.SetSession()
 	if err != nil {
 		t.Error("error set session: ", err)
 	}
 
 	fmt.Println("start router")
-	testRouter := SetupRouter(tmongo, coauth)
+	testRouter := SetupRouter(vars, tmongo, coauth)
 
 	// start make requests
 	getRndPoint, err := http.NewRequest("GET", "/api/v1/points/random", nil)
 	getPoints, err := http.NewRequest("GET", "/api/v1/points", nil)
-	/*
-		postValues := url.Values{}
-		postValues.Set("data", md.RndStr(4))
-		postDataStr := postValues.Encode()
-		postDataBytes := []byte(postDataStr)
-		postBytesReader := bytes.NewReader(postDataBytes)
-		post, err := http.NewRequest("POST", "/PostPoint", postBytesReader)
-	*/
 
 	wg := &sync.WaitGroup{}
 	for count := 0; count < 2; count++ {
@@ -81,41 +74,195 @@ func _TestGetPostData(t *testing.T) { // {{{
 	wg.Wait()
 } // }}}
 
-func TestPoint(t *testing.T) {
-	tmongo, coauth := dbTest()
+func _TestPoint(t *testing.T) { // {{{
+	num_request := 6
+
+	vars, tmongo, coauth := dbTest()
 	err := tmongo.SetSession()
 	if err != nil {
 		t.Error("error set session: ", err)
 	}
-
-	fmt.Println("start router")
-	testRouter := SetupRouter(tmongo, coauth)
+	err = tmongo.Init()
+	if err != nil {
+		t.Error("error init in testPoint: ", err)
+	}
+	testRouter := SetupRouter(vars, tmongo, coauth)
 
 	// start make requests
 
 	point := md.GeoPoint{}
-
 	wg := &sync.WaitGroup{}
-	for count := 0; count < 6; count++ {
+	for count := 0; count < num_request; count++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			point.SetRnd()
 			jpoint, _ := json.Marshal(point)
 			postPoint, _ := http.NewRequest("POST", "/api/v1/points/", bytes.NewBuffer(jpoint))
-
 			postPoint.Header.Set("X-Custom-Header", "myvalue")
 			postPoint.Header.Set("Content-Type", "application/json")
-
 			response := httptest.NewRecorder()
 			testRouter.ServeHTTP(response, postPoint)
-			fmt.Println(response.Body)
 		}()
 	}
 	wg.Wait()
 
-	// response := httptest.NewRecorder()
-	// testRouter.ServeHTTP(response, postPoint)
-	// fmt.Println(response.Body)
+	type Res struct {
+		Msg  string        `json:"msg"`
+		Body []md.GeoPoint `json:"body"`
+	}
 
-}
+	getPoints, _ := http.NewRequest("GET", "/api/v1/points/all", nil)
+	response := httptest.NewRecorder()
+	testRouter.ServeHTTP(response, getPoints)
+
+	res := Res{}
+	err = json.Unmarshal(response.Body.Bytes(), &res)
+
+	if len(res.Body) != num_request {
+		t.Error("error, count post point don't coincides with get all point")
+	}
+} // }}}
+
+func TestPutPoint(t *testing.T) { // {{{
+	vars, tmongo, coauth := dbTest()
+	err := tmongo.SetSession()
+	if err != nil {
+		t.Error("error set session: ", err)
+	}
+	err = tmongo.Init()
+	if err != nil {
+		t.Error("error init in testPoint: ", err)
+	}
+	testRouter := SetupRouter(vars, tmongo, coauth)
+
+	type Res struct {
+		Msg  string      `json:"msg"`
+		Body md.GeoPoint `json:"body"`
+	}
+
+	// case 1
+	{
+		point := md.GeoPoint{}
+		point.SetRnd()
+		jpoint, _ := json.Marshal(point)
+		putPoint, _ := http.NewRequest("PUT", "/api/v1/points/", bytes.NewBuffer(jpoint))
+		putPoint.Header.Set("X-Custom-Header", "myvalue")
+		putPoint.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		testRouter.ServeHTTP(response, putPoint)
+		res := Res{}
+		err = json.Unmarshal(response.Body.Bytes(), &res)
+		if err != nil {
+			t.Errorf("error put point: %v", err)
+		}
+		empty_point := md.GeoPoint{}
+		if res.Body == empty_point {
+			t.Error("error, empty put point")
+		}
+	}
+
+	// case 2 put point without id
+	{
+		point := md.GeoPoint{}
+		point.SetRnd()
+		point.Id = ""
+		jpoint, _ := json.Marshal(point)
+		putPoint, _ := http.NewRequest("PUT", "/api/v1/points/", bytes.NewBuffer(jpoint))
+		putPoint.Header.Set("X-Custom-Header", "myvalue")
+		putPoint.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		testRouter.ServeHTTP(response, putPoint)
+		res := Res{}
+		err = json.Unmarshal(response.Body.Bytes(), &res)
+		if err != nil {
+			t.Errorf("error put point: %v", err)
+		}
+		empty_point := md.GeoPoint{}
+		if res.Body == empty_point {
+			t.Error("error, empty put point")
+		}
+	}
+
+	// case 3 put point 2nd time with diff data
+	{
+		point := md.GeoPoint{}
+		point.SetRnd()
+		point.Id = ""
+		jpoint, _ := json.Marshal(point)
+		putPoint, _ := http.NewRequest("PUT", "/api/v1/points/", bytes.NewBuffer(jpoint))
+		putPoint.Header.Set("X-Custom-Header", "myvalue")
+		putPoint.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		testRouter.ServeHTTP(response, putPoint)
+		res := Res{}
+		err = json.Unmarshal(response.Body.Bytes(), &res)
+		if err != nil {
+			t.Errorf("error put point: %v", err)
+		}
+
+		putted_point := res.Body
+		empty_point := md.GeoPoint{}
+		if putted_point == empty_point {
+			t.Error("error, empty put point")
+		}
+
+		point.SetRnd()
+		point.Id = putted_point.Id
+
+		jpoint, _ = json.Marshal(point)
+		putPoint, _ = http.NewRequest("PUT", "/api/v1/points/", bytes.NewBuffer(jpoint))
+		putPoint.Header.Set("X-Custom-Header", "myvalue")
+		putPoint.Header.Set("Content-Type", "application/json")
+		response = httptest.NewRecorder()
+		testRouter.ServeHTTP(response, putPoint)
+		res = Res{}
+		err = json.Unmarshal(response.Body.Bytes(), &res)
+		if err != nil {
+			t.Errorf("error put point 2: %v", err)
+		}
+
+		if putted_point.Token == res.Body.Token {
+			t.Error("error, put point not changed")
+		}
+
+	}
+} // }}}
+
+func _TestGeoState(t *testing.T) { // {{{
+	num_request := 5
+
+	vars, tmongo, coauth := dbTest()
+	err := tmongo.SetSession()
+	if err != nil {
+		t.Error("error set session: ", err)
+	}
+	err = tmongo.Init()
+	if err != nil {
+		t.Error("error init in testPoint: ", err)
+	}
+	testRouter := SetupRouter(vars, tmongo, coauth)
+
+	// start make requests
+
+	point := md.GeoPoint{}
+	wg := &sync.WaitGroup{}
+	for count := 0; count < num_request; count++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			point.SetRnd()
+			jpoint, _ := json.Marshal(point)
+			postPoint, _ := http.NewRequest("POST", "/api/v1/points/state", bytes.NewBuffer(jpoint))
+			postPoint.Header.Set("X-Custom-Header", "myvalue")
+			postPoint.Header.Set("Content-Type", "application/json")
+			response := httptest.NewRecorder()
+			testRouter.ServeHTTP(response, postPoint)
+		}()
+	}
+	wg.Wait()
+
+	if len(vars.geoState.Points) != num_request {
+		t.Error("error, count post point to geostate don't coincides with get all point")
+	}
+} // }}}

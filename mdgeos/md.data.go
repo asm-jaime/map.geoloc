@@ -78,7 +78,7 @@ type (
 		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
 		Type        string        `bson:"-"`
 		Token       string        `form:"token" binding:"required" bson:"token,omitempty"`
-		Coordinates [2]float64    `form:"coordinates" binding:"required" bson:"coordinates"`
+		Coordinates [2]float64    `form:"coordinates" binding:"required" bson:"coordinates,omitempty"`
 	}
 
 	GeoPoints []GeoPoint

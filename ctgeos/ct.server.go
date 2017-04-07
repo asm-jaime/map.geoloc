@@ -15,13 +15,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ========== declaration of configs
+// ========== global vars, what should be set to context
 
-var geoState *md.GeoState
+type Vars struct {
+	geoState md.GeoState
+}
 
 // ========== middlewares
 
-func MiddleDB(mongo *md.MongoDB) gin.HandlerFunc {
+func MiddleVars(vars *Vars) gin.HandlerFunc { // {{{
+	return func(c *gin.Context) {
+		c.Set("vars", vars)
+		c.Next()
+	}
+} // }}}
+
+func MiddleDB(mongo *md.MongoDB) gin.HandlerFunc { // {{{
 	return func(c *gin.Context) {
 		err := mongo.SetSession()
 		if err != nil {
@@ -31,7 +40,7 @@ func MiddleDB(mongo *md.MongoDB) gin.HandlerFunc {
 			c.Next()
 		}
 	}
-}
+} // }}}
 
 func MiddleAuth(oauth *oauth2.Config) gin.HandlerFunc { // {{{
 	return func(c *gin.Context) {
@@ -76,7 +85,7 @@ func MiddleNoRoute(c *gin.Context) { // {{{
 
 // ========== init server
 
-func SetupRouter(mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
+func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 	router := gin.Default()
 	// support sessions
 	store := sessions.NewCookieStore([]byte(md.RandToken(64)))
@@ -125,6 +134,7 @@ func SetupRouter(mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 				group.DELETE("/", DelGroup)
 			}
 			point := v1.Group("points")
+			point.Use(MiddleVars(vars))
 			{
 				point.GET("/all", GetPoints)
 				point.GET("/", GetPoint)
@@ -154,7 +164,7 @@ func SetupRouter(mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 	return router
 }
 
-func Start(args []string) (err error) { // {{{
+func Start(args []string) (err error) {
 	// init config
 	config := conf.ServerConfig{}
 	config.SetDefault()
@@ -162,8 +172,7 @@ func Start(args []string) (err error) { // {{{
 	mongo.SetDefault()
 
 	// the only global state with no context
-	geoState = md.NewGeoState()
-
+	vars := Vars{geoState: *md.NewGeoState()}
 	// processing console arguments
 	if len(args) > 3 { // set port
 		config.Port = args[3]
@@ -199,7 +208,7 @@ func Start(args []string) (err error) { // {{{
 	fmt.Println("---------------")
 
 	// star server
-	router := SetupRouter(&mongo, &coauth)
+	router := SetupRouter(&vars, &mongo, &coauth)
 	router.Run(config.Port)
 	return err
-} // }}}
+}

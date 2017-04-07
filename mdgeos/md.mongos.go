@@ -469,13 +469,13 @@ func (mongo *MongoDB) GetPoint(point *GeoPoint) (gpoint GeoPoint, err error) { /
 	return gpoint, err
 } // }}}
 
-func (mongo *MongoDB) PostPoint(point *GeoPoint) (err error) { // {{{
+func (mongo *MongoDB) PostPoint(point *GeoPoint) (gpoint *GeoPoint, err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	point.Id = bson.NewObjectId()
 	err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
-	return err
+	return point, err
 } // }}}
 
 func (mongo *MongoDB) PostPoints(points *[]GeoPoint) (err error) { // {{{
