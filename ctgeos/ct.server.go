@@ -136,12 +136,13 @@ func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engin
 			point := v1.Group("points")
 			point.Use(MiddleVars(vars))
 			{
-				point.GET("/all", GetPoints)
-				point.GET("/", GetPoint)
-				point.POST("/", PostPoint)
-				point.POST("/state", PostPointToGeostate)
+				point.GET("/all", GetLocs)
+				point.GET("/", GetLoc)
+				point.GET("/", GetNearPoint)
+				point.POST("/", PostLoc)
+				point.POST("/state", PostLocToGeostate)
 				point.PUT("/", PutPoint)
-				point.DELETE("/", DelPoint)
+				point.DELETE("/", DelLoc)
 			}
 			rndpoint := v1.Group("rndpoints")
 			{
@@ -155,7 +156,7 @@ func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engin
 			lock := v1.Group("/lock")
 			{
 				lock.Use(MiddleAuth(oauth))
-				lock.GET("/", GetPoints)
+				lock.GET("/", GetLocs)
 			}
 		}
 	}

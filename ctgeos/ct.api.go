@@ -333,13 +333,13 @@ func DelGroup(c *gin.Context) { // {{{
 
 // ========== points
 
-func GetPoints(c *gin.Context) { // {{{
+func GetLocs(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
-	req, err := mongo.GetPoints()
+	req, err := mongo.GetLocs()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 	} else {
@@ -347,20 +347,20 @@ func GetPoints(c *gin.Context) { // {{{
 	}
 } // }}}
 
-func GetPoint(c *gin.Context) { // {{{
+func GetLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
-	var req md.GeoPoint
+	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	req, err = mongo.GetPoint(&req)
+	req, err = mongo.GetLoc(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 	} else {
@@ -368,19 +368,45 @@ func GetPoint(c *gin.Context) { // {{{
 	}
 } // }}}
 
-func PostPoint(c *gin.Context) { // {{{
+type ReqNearPoint struct {
+	Distance int
+	Point    md.GeoLocation
+}
+
+func GetNearPoint(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
 	}
-	var req md.GeoPoint
+
+	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	point, err := mongo.PostPoint(&req)
+	req, err = mongo.GetLoc(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": req})
+	}
+} // }}}
+
+func PostLoc(c *gin.Context) { // {{{
+	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+	}
+	var req md.GeoLocation
+	err := c.Bind(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		return
+	}
+
+	point, err := mongo.PostLoc(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 		return
@@ -389,12 +415,12 @@ func PostPoint(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": point})
 } // }}}
 
-func PutPoint(c *gin.Context) {
+func PutPoint(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
 	}
-	var req md.GeoPoint
+	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
@@ -402,16 +428,16 @@ func PutPoint(c *gin.Context) {
 	}
 
 	if req.Id.Hex() != "" {
-		err = mongo.UpdatePoint(&req)
+		err = mongo.UpdateLoc(&req)
 		if err != nil {
-			point, err := mongo.PostPoint(&req)
+			point, err := mongo.PostLoc(&req)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": point})
 				return
 			}
 		}
 	} else {
-		_, err := mongo.PostPoint(&req)
+		_, err := mongo.PostLoc(&req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 			return
@@ -419,21 +445,21 @@ func PutPoint(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": req})
-}
+} // }}}
 
-func DelPoint(c *gin.Context) { // {{{
+func DelLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
 	}
-	var req md.GeoPoint
+	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	err = mongo.DelPoint(&req)
+	err = mongo.DelLoc(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 		return
@@ -442,14 +468,14 @@ func DelPoint(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, gin.H{"msg": "del point complete", "body": req})
 } // }}}
 
-func PostPointToGeostate(c *gin.Context) { // {{{
+func PostLocToGeostate(c *gin.Context) { // {{{
 	vars, ok := c.Keys["vars"].(*Vars)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't get vars from context", "body": nil})
 		return
 	}
 
-	var req md.GeoPoint
+	var req md.GeoLocation
 	err := c.Bind(&req)
 
 	if err != nil {
@@ -463,7 +489,7 @@ func PostPointToGeostate(c *gin.Context) { // {{{
 //========== random
 
 func GetRndPoint(c *gin.Context) { // {{{
-	var req md.GeoPoint
+	var req md.GeoLocation
 	req.SetRnd()
 
 	c.JSON(http.StatusOK, gin.H{"msg": "get rnd point complete", "body": req})
@@ -477,7 +503,7 @@ func GetDistance(c *gin.Context) { // {{{
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "database don't available", "body": nil})
 	}
 
-	var req md.GeoPoint
+	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
@@ -493,9 +519,9 @@ func GetDistance(c *gin.Context) { // {{{
 		return
 	}
 
-	point := md.GeoPoint{}
+	point := md.GeoLocation{}
 	point.Id = user.Id
-	point, err = mongo.GetPoint(&point)
+	point, err = mongo.GetLoc(&point)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 		return

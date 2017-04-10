@@ -63,14 +63,7 @@ func (mongo *MongoDB) MgoConfig() *mgo.DialInfo {
 
 // ========== sessions
 
-// GetSession return a new session if there is no previous one.
-
-// func (mongo *MongoDB) FreeSession() (session *mgo.Session, err error) { // {{{
-// session, err = mgo.Dial(mongo.Host)
-// return session, err
-// } // }}}
-
-// Session return a new session
+// SetSession set a new session
 func (mongo *MongoDB) SetSession() (err error) {
 	mongo.Session, err = mgo.DialWithInfo(mongo.Info)
 	if err != nil {
@@ -81,16 +74,6 @@ func (mongo *MongoDB) SetSession() (err error) {
 	}
 	return err
 }
-
-// func (mongo *MongoDB) Session() (session *mgo.Session, err error) { // {{{
-// session, err = mgo.DialWithInfo(mongo.Info)
-// return session, err
-// } // }}}
-
-// func (mongo *MongoDB) Connect() (err error) { // {{{
-// session, err = mgo.DialWithInfo(mongo.Info)
-// return session, err
-// } // }}}
 
 // ========== database init
 
@@ -144,9 +127,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	session.EnsureSafe(&mgo.Safe{})
 
 	// ========== users
-
 	collection := session.DB(mongo.Database).C("dviUsers")
-
 	index := mgo.Index{
 		Key:        []string{"name", "email", "description", "events", "groups"},
 		Unique:     false,
@@ -159,9 +140,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	}
 
 	// ========== events
-
 	collection = session.DB(mongo.Database).C("dviEvents")
-
 	index = mgo.Index{
 		Key:        []string{"name", "description", "users", "groups"},
 		Unique:     false,
@@ -172,7 +151,6 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	if err != nil {
 		return err
 	}
-
 	index = mgo.Index{
 		Key:         []string{"ttl"},
 		ExpireAfter: time.Duration(1) * time.Second,
@@ -183,9 +161,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	}
 
 	// ========== groups
-
 	collection = session.DB(mongo.Database).C("dviGroups")
-
 	index = mgo.Index{
 		Key:        []string{"name", "description", "users", "events"},
 		Unique:     false,
@@ -197,10 +173,8 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 		return err
 	}
 
-	// ========== points
-
-	collection = session.DB(mongo.Database).C("dviPoints")
-
+	// ========== Locs
+	collection = session.DB(mongo.Database).C("dviLocations")
 	index = mgo.Index{
 		Key:        []string{"token"},
 		Unique:     false,
@@ -211,9 +185,8 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	if err != nil {
 		return err
 	}
-
 	index = mgo.Index{
-		Key:  []string{"$2dsphere:coordinates"},
+		Key:  []string{"$2dsphere:location"},
 		Bits: 26,
 	}
 	err = collection.EnsureIndex(index)
@@ -252,10 +225,10 @@ func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 		}
 	}
 
-	point := GeoPoint{}
+	point := GeoLocation{}
 	for i := 0; i < num; i++ {
 		point.SetRnd()
-		err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
+		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 		if err != nil {
 			return err
 		}
@@ -366,7 +339,7 @@ func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	err = session.DB(mongo.Database).C("dviPoints").Update(
+	err = session.DB(mongo.Database).C("dviLocations").Update(
 		bson.M{"_id": event.Id}, &event)
 	return err
 } // }}}
@@ -427,7 +400,7 @@ func (mongo *MongoDB) UpdateGroup(group *Group) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	err = session.DB(mongo.Database).C("dviPoints").Update(
+	err = session.DB(mongo.Database).C("dviLocations").Update(
 		bson.M{"_id": group.Id}, &group)
 	return err
 } // }}}
@@ -445,77 +418,94 @@ func (mongo *MongoDB) DelGroup(group *Group) (err error) { // {{{
 
 // ========== point
 
-func (mongo *MongoDB) GetPoints() (points []GeoPoint, err error) { // {{{
+func (mongo *MongoDB) GetLocs() (locs []GeoLocation, err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	err = session.DB(mongo.Database).C("dviPoints").Find(bson.M{}).All(&points)
-	return points, err
+	err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{}).All(&locs)
+	return locs, err
 } // }}}
 
-func (mongo *MongoDB) GetPoint(point *GeoPoint) (gpoint GeoPoint, err error) { // {{{
+func (mongo *MongoDB) GetLoc(point *GeoLocation) (gpoint GeoLocation, err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if point.Token != "" {
-		err = session.DB(mongo.Database).C("dviPoints").Find(bson.M{"token": point.Token}).One(&gpoint)
+		err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{"token": point.Token}).One(&gpoint)
 		return gpoint, err
 	}
 
 	if point.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviPoints").Find(bson.M{"_id": point.Id}).One(&gpoint)
+		err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{"_id": point.Id}).One(&gpoint)
 		return gpoint, err
 	}
 	return gpoint, err
 } // }}}
 
-func (mongo *MongoDB) PostPoint(point *GeoPoint) (gpoint *GeoPoint, err error) { // {{{
+func (mongo *MongoDB) PostLoc(point *GeoLocation) (gpoint *GeoLocation, err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	point.Id = bson.NewObjectId()
-	err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
+	err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 	return point, err
 } // }}}
 
-func (mongo *MongoDB) PostPoints(points *[]GeoPoint) (err error) { // {{{
+func (mongo *MongoDB) PostLocs(locs *[]GeoLocation) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	for _, point := range *points {
+	for _, point := range *locs {
 		point.Id = bson.NewObjectId()
-		err = session.DB(mongo.Database).C("dviPoints").Insert(&point)
+		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 	}
 	return err
 } // }}}
 
-func (mongo *MongoDB) UpdatePoint(point *GeoPoint) (err error) { // {{{
+func (mongo *MongoDB) UpdateLoc(point *GeoLocation) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	err = session.DB(mongo.Database).C("dviPoints").Update(
+	err = session.DB(mongo.Database).C("dviLocations").Update(
 		bson.M{"_id": point.Id}, &point)
 	return err
 } // }}}
 
-func (mongo *MongoDB) DelPoint(point *GeoPoint) (err error) { // {{{
+func (mongo *MongoDB) DelLoc(point *GeoLocation) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	if point.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviPoints").RemoveId(point.Id)
+		err = session.DB(mongo.Database).C("dviLocations").RemoveId(point.Id)
 		return err
 	}
 
 	if point.Token != "" {
-		err = session.DB(mongo.Database).C("dviPoints").Remove(bson.M{
+		err = session.DB(mongo.Database).C("dviLocations").Remove(bson.M{
 			"token": point.Token,
 		})
 	}
 	return err
 } // }}}
 
-// ========== check point
+func (mongo *MongoDB) GetNearLoc(point *GeoLocation, scope int) (locs []GeoLocation, err error) {
+	session := mongo.Session.Clone()
+	defer session.Close()
+
+	err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{
+		"location": bson.M{
+			"$nearSphere": bson.M{
+				"$geometry": bson.M{
+					"type":        point.Location.Type,
+					"coordinates": []float64{point.Location.Coordinates[0], point.Location.Coordinates[1]},
+				},
+				"$maxDistance": scope,
+			},
+		},
+	}).All(&locs)
+
+	return locs, err
+}
 
 // ========== geostate
 
@@ -523,8 +513,8 @@ func (mongo *MongoDB) UpdateGeoState(geost *GeoState) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	for _, point := range geost.Points {
-		err = session.DB(mongo.Database).C("dviPoints").Update(
+	for _, point := range geost.locs {
+		err = session.DB(mongo.Database).C("dviLocations").Update(
 			bson.M{"_id": point.Id}, &point)
 	}
 

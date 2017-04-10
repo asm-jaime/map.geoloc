@@ -22,7 +22,7 @@ type DistanceReq struct {
 	Distance float64 `form:"distance" binding:"required"`
 }
 
-// ========== Users{{{
+// ========== Users {{{
 
 type (
 	User struct {
@@ -70,27 +70,29 @@ type (
 
 // }}}
 
-// ========== Points {{{
+// ========== locs
 
-// id GeoPoint should be id user/event/group
+// id GeoLocation should be id user/event/group
 type (
-	GeoPoint struct {
-		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Type        string        `bson:"-"`
-		Token       string        `form:"token" binding:"required" bson:"token,omitempty"`
-		Coordinates [2]float64    `form:"coordinates" binding:"required" bson:"coordinates,omitempty"`
+	GeoObject struct {
+		Type        string     `json:"-"`
+		Coordinates [2]float64 `json:"coordinates,omitempty"`
 	}
 
-	GeoPoints []GeoPoint
+	GeoLocation struct {
+		Id       bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Token    string        `form:"token" binding:"required" bson:"token,omitempty"`
+		Location GeoObject     `form:"location" bson:"location,omitempty"`
+	}
 
-	// GeoState is map(array) of points
+	GeoLocations []GeoLocation
+
+	// GeoState is map(array) of locs
 	GeoState struct {
-		Points map[bson.ObjectId]GeoPoint
+		locs map[bson.ObjectId]GeoLocation
 		sync.RWMutex
 	}
 )
-
-// }}}
 
 // ========== random {{{
 
@@ -116,26 +118,26 @@ func RandToken(length int) string {
 // NewGeoState will return a new state {{{
 func NewGeoState() *GeoState {
 	return &GeoState{
-		Points: make(map[bson.ObjectId]GeoPoint),
+		locs: make(map[bson.ObjectId]GeoLocation),
 	}
 } // }}}
 
 // Add new point with token {{{
-func (geost *GeoState) Add(point *GeoPoint) {
+func (geost *GeoState) Add(point *GeoLocation) {
 	geost.Lock()
 	defer geost.Unlock()
-	geost.Points[point.Id] = *point
+	geost.locs[point.Id] = *point
 } // }}}
 
-// SetRnd fill GeoState the n points {{{
+// SetRnd fill GeoState the n locs {{{
 func (geost *GeoState) SetRnd(num int) {
 	geost.Lock()
 	defer geost.Unlock()
 
-	point := new(GeoPoint)
+	point := new(GeoLocation)
 	for i := 0; i < num; i++ {
 		point.SetRnd()
-		geost.Points[point.Id] = *point
+		geost.locs[point.Id] = *point
 	}
 } // }}}
 
@@ -149,37 +151,36 @@ func (geost *GeoState) Clear() {
 	geost.Lock()
 	defer geost.Unlock()
 
-	geost.Points = make(map[bson.ObjectId]GeoPoint)
+	geost.locs = make(map[bson.ObjectId]GeoLocation)
 } // }}}
 
 // Len return lenght state {{{
 func (geost *GeoState) Len() int {
-	return len(geost.Points)
+	return len(geost.locs)
 } // }}}
 
-// GetPoint new point with token {{{
-func (geost *GeoState) GetPoint(id bson.ObjectId) (point GeoPoint, ok bool) {
+// GetLoc new point with token {{{
+func (geost *GeoState) GetLoc(id bson.ObjectId) (point GeoLocation, ok bool) {
 	geost.Lock()
 	defer geost.Unlock()
-	point, ok = geost.Points[id]
+	point, ok = geost.locs[id]
 	return point, ok
 } // }}}
 
-// ========== GeoPoint
+// ========== GeoLocation
 
-func (point *GeoPoint) SetRnd() { // {{{
+func (point *GeoLocation) SetRnd() {
 	point.Id = bson.NewObjectId()
 	point.Token = RndStr(8)
-	point.Type = "Point"
-	point.Coordinates[0] = (rand.Float64() * 5) + 5
-	point.Coordinates[1] = (rand.Float64() * 5) + 5
-} // }}}
+	point.Location.Type = "Point"
+	point.Location.Coordinates[0] = (rand.Float64() * 5) + 5
+	point.Location.Coordinates[1] = (rand.Float64() * 5) + 5
+}
 
-// GetDistance set random data to a point
-func (point *GeoPoint) GetDistance(toPoint *GeoPoint) (distance float64) { // {{{
+func (point *GeoLocation) GetDistance(toPoint *GeoLocation) (distance float64) { // {{{
 	distance = math.Sqrt(
-		math.Pow(point.Coordinates[0]-toPoint.Coordinates[0], 2) +
-			math.Pow(point.Coordinates[1]-toPoint.Coordinates[1], 2))
+		math.Pow(point.Location.Coordinates[0]-toPoint.Location.Coordinates[0], 2) +
+			math.Pow(point.Location.Coordinates[1]-toPoint.Location.Coordinates[1], 2))
 	return distance
 } // }}}
 

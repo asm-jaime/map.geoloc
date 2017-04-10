@@ -6,12 +6,22 @@ import (
 	"time"
 )
 
-func dbTest() *MongoDB {
-	mg := &MongoDB{}
+func dbTest() (mg *MongoDB, err error) {
+	mg = &MongoDB{}
 	mg.SetDefault()
 	mg.Database = "test"
 	mg.Info = mg.MgoConfig()
-	return mg
+
+	err = mg.SetSession()
+	if err != nil {
+		return mg, err
+	}
+
+	err = mg.Init()
+	if err != nil {
+		return mg, err
+	}
+	return mg, err
 }
 
 func dbProduct() *MongoDB {
@@ -22,43 +32,13 @@ func dbProduct() *MongoDB {
 }
 
 func _TestSession(t *testing.T) { // {{{
-	mongo := dbTest()
-	err := mongo.SetSession()
-	// fmt.Printf("\n free session: %v\n", mongo.Session)
-	if err != nil {
-		t.Error("error free session: ", err)
-		return
-	}
-} // }}}
-
-func _TestInit(t *testing.T) { // {{{
-	tdb := dbTest()
-	err := tdb.Init()
-	if err != nil {
-		t.Error("error Init : ", err)
-	}
-
-	err = tdb.FillRnd(10)
-	if err != nil {
-		t.Error("error FillRnd: ", err)
-	}
-
-	points, err := tdb.GetPoints()
-	if err != nil {
-		t.Error("error GetAllPoints: ", err)
-	}
-	if len(points) == 0 {
-		t.Error("error, points was not added")
-	}
 } // }}}
 
 func _TestFillRnd(t *testing.T) { // {{{
 	num := 10
-
-	tdb := dbTest()
-	err := tdb.Init()
+	tdb, err := dbTest()
 	if err != nil {
-		t.Error("error Init in FillRnd: ", err)
+		t.Error("err connect db in FillRnd: ", err)
 	}
 
 	// Normal insertion
@@ -67,48 +47,45 @@ func _TestFillRnd(t *testing.T) { // {{{
 	err = tdb.FillRnd(num)
 
 	elapsed := time.Since(start)
+
 	fmt.Printf("\nelapsed FillRnd: %v\n", elapsed)
+
 	if err != nil {
 		t.Error("error FillRnd: ", err)
 	}
 
-	points, err := tdb.GetPoints()
-	if err != nil || len(points) == 0 {
-		t.Error("error GetAllPoints in FillRnd: ", err)
+	locs, err := tdb.GetLocs()
+	if err != nil || len(locs) == 0 {
+		t.Error("error GetLocs in FillRnd: ", err)
 	}
-	fmt.Printf("\n %v points, one from db: %v \n", len(points), points[0])
+	// fmt.Printf("\n %v locs, one from db: %v \n", len(locs), locs[0])
 
 	events, err := tdb.GetEvents()
 	if err != nil || len(events) == 0 {
-		t.Error("error GetAllEvents in FillRnd: ", err)
+		t.Error("error GetEvents in FillRnd: ", err)
 	}
-	fmt.Printf("\n %v events, one from db: %v \n", len(events), events[0])
+	// fmt.Printf("\n %v events, one from db: %v \n", len(events), events[0])
 } // }}}
 
-func TestPoint(t *testing.T) {
-	tdb := dbTest()
-	err := tdb.SetSession()
-	if err != nil {
-		t.Error("error set session: ", err)
-	}
+func _TestLocation(t *testing.T) { // {{{
+	tdb, err := dbTest()
 
-	err = tdb.Init()
 	if err != nil {
-		t.Error("error post Point: ", err)
+		t.Error("err connect db in FillRnd: ", err)
 	}
 
 	// case get/post
 	{
-		point := GeoPoint{}
+		point := GeoLocation{}
 		point.SetRnd()
 
-		err = tdb.PostPoint(&point)
+		_, err = tdb.PostLoc(&point)
 		if err != nil {
 			t.Error("error post Point: ", err)
 		}
-		spoint := GeoPoint{}
+		spoint := GeoLocation{}
 		spoint.Token = point.Token
-		gpoint, err := tdb.GetPoint(&spoint)
+		gpoint, err := tdb.GetLoc(&spoint)
 		if err != nil {
 			t.Error("error post Point: ", err)
 		}
@@ -116,47 +93,52 @@ func TestPoint(t *testing.T) {
 			t.Error("error get post point: ", err)
 		}
 	}
+
 	// case post/update
 	{
-		point := GeoPoint{}
+		point := GeoLocation{}
 		point.SetRnd()
-		err = tdb.PostPoint(&point)
+		_, err = tdb.PostLoc(&point)
 		if err != nil {
 			t.Error("err post 1: ", err)
 		}
 		// fmt.Printf("\npoint %v posted\n", point.Token)
 
-		spoint := GeoPoint{}
+		spoint := GeoLocation{}
 		spoint.SetRnd()
 		spoint.Id = point.Id
-		err = tdb.UpdatePoint(&spoint)
+		err = tdb.UpdateLoc(&spoint)
 		if err != nil {
 			t.Error("err update: ", err)
 		}
-		// fmt.Printf("\nspoint %v updated\n", spoint.Token)
+		fmt.Printf("\nspoint %v updated\n", spoint)
 
-		gpoint, err := tdb.GetPoint(&spoint)
+		gpoint, err := tdb.GetLoc(&spoint)
 		if err != nil {
 			t.Error("err get: ", err)
 		}
 		if point.Id == gpoint.Id && point.Token == gpoint.Token {
-			t.Error("err points do not updated: ", err)
+			t.Error("err locs do not updated: ", err)
 		}
 	}
-}
+} // }}}
 
-// // Bulk insertion// {{{
-// start = time.Now()
-// docs := make([]interface{}, len(events))
-// for i := 0; i < len(events); i++ {
-// docs[i] = events[i]
-// }
-// fmt.Printf("\n docs: %v \n", docs)
-// collection.Bulk().Insert(docs...)
-// res, err := collection.Bulk().Run()
-// elapsed = time.Since(start)
-// fmt.Printf("\nelapsed Bulk Insert: %v\n", elapsed)
-// if err != nil {
-// t.Error("error FillRnd Insertion: ", err)
-// }
-// fmt.Printf("res: %v", res)// }}}
+func TestNearLoc(t *testing.T) {
+	num := 100
+	tdb, err := dbTest()
+	if err != nil {
+		t.Error("err connect db in FillRnd: ", err)
+	}
+	err = tdb.FillRnd(num)
+	if err != nil {
+		t.Error("err Fill: ", err)
+	}
+
+	point := GeoLocation{}
+	point.SetRnd()
+
+	locs, err := tdb.GetNearLoc(&point, 1000000)
+
+	fmt.Printf("\nlocs: %v\n", locs)
+
+}
