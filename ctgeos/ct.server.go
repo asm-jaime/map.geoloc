@@ -137,10 +137,10 @@ func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engin
 			point.Use(MiddleVars(vars))
 			{
 				point.GET("/all", GetLocs)
+				point.GET("/near", GetNearLoc)
 				point.GET("/", GetLoc)
-				point.GET("/", GetNearPoint)
 				point.POST("/", PostLoc)
-				point.POST("/state", PostLocToGeostate)
+				point.POST("/state", PostLocToGeoState)
 				point.PUT("/", PutPoint)
 				point.DELETE("/", DelLoc)
 			}

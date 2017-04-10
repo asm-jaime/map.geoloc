@@ -489,6 +489,7 @@ func (mongo *MongoDB) DelLoc(point *GeoLocation) (err error) { // {{{
 } // }}}
 
 func (mongo *MongoDB) GetNearLoc(point *GeoLocation, scope int) (locs []GeoLocation, err error) {
+	// fmt.Printf("\nloc: %v\n, dist: %v\n", point, scope)
 	session := mongo.Session.Clone()
 	defer session.Close()
 
@@ -513,7 +514,7 @@ func (mongo *MongoDB) UpdateGeoState(geost *GeoState) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	for _, point := range geost.locs {
+	for _, point := range geost.Locations {
 		err = session.DB(mongo.Database).C("dviLocations").Update(
 			bson.M{"_id": point.Id}, &point)
 	}

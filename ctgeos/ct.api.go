@@ -331,7 +331,7 @@ func DelGroup(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, gin.H{"msg": "del group complete", "body": req})
 } // }}}
 
-// ========== points
+// ========== locations
 
 func GetLocs(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
@@ -348,32 +348,6 @@ func GetLocs(c *gin.Context) { // {{{
 } // }}}
 
 func GetLoc(c *gin.Context) { // {{{
-	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
-	}
-
-	var req md.GeoLocation
-	err := c.Bind(&req)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
-		return
-	}
-
-	req, err = mongo.GetLoc(&req)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
-	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": req})
-	}
-} // }}}
-
-type ReqNearPoint struct {
-	Distance int
-	Point    md.GeoLocation
-}
-
-func GetNearPoint(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
@@ -468,7 +442,7 @@ func DelLoc(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, gin.H{"msg": "del point complete", "body": req})
 } // }}}
 
-func PostLocToGeostate(c *gin.Context) { // {{{
+func PostLocToGeoState(c *gin.Context) { // {{{
 	vars, ok := c.Keys["vars"].(*Vars)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't get vars from context", "body": nil})
@@ -495,7 +469,7 @@ func GetRndPoint(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, gin.H{"msg": "get rnd point complete", "body": req})
 } // }}}
 
-// ========== check point
+// ========== check location
 
 func GetDistance(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
@@ -531,3 +505,32 @@ func GetDistance(c *gin.Context) { // {{{
 
 	c.JSON(http.StatusOK, gin.H{"msg": "get distance complete", "body": distance})
 } // }}}
+
+// ========== positioning location
+
+// func GetNearLoc
+type ReqNear struct {
+	Distance int            `json:"distance"`
+	GeoLoc   md.GeoLocation `json:"geoloc"`
+}
+
+func GetNearLoc(c *gin.Context) {
+	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+	}
+
+	var req ReqNear
+	err := c.BindJSON(&req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		return
+	}
+
+	locs, err := mongo.GetNearLoc(&req.GeoLoc, req.Distance)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": locs})
+	}
+}

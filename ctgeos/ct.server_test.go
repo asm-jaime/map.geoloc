@@ -3,7 +3,6 @@ package ctgeos
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -16,17 +15,32 @@ import (
 	md "dvij.geoloc/mdgeos"
 )
 
-func dbTest() (*Vars, *md.MongoDB, *oauth2.Config) { // {{{
-	mg := &md.MongoDB{}
+func dbTest() (vars *Vars, mg *md.MongoDB, coauth *oauth2.Config, err error) { // {{{
+	mg = &md.MongoDB{}
 	mg.SetDefault()
 	mg.Database = "test"
 	mg.Info = mg.MgoConfig()
 
-	vars := &Vars{geoState: *md.NewGeoState()}
+	err = mg.SetSession()
+	if err != nil {
+		return vars, mg, coauth, err
+	}
+
+	err = mg.Init()
+	if err != nil {
+		return vars, mg, coauth, err
+	}
+
+	// err = mg.FillRnd(1)
+	// if err != nil {
+	// return vars, mg, coauth, err
+	// }
+
+	vars = &Vars{geoState: *md.NewGeoState()}
 	config := conf.ServerConfig{}
 	config.SetDefault()
 
-	coauth := &oauth2.Config{
+	coauth = &oauth2.Config{
 		ClientID:     config.Cred.Cid,
 		ClientSecret: config.Cred.Csecret,
 		RedirectURL:  "http://" + config.Host + ":" + config.Port + "/auth",
@@ -36,7 +50,7 @@ func dbTest() (*Vars, *md.MongoDB, *oauth2.Config) { // {{{
 		Endpoint: google.Endpoint,
 	}
 
-	return vars, mg, coauth
+	return vars, mg, coauth, err
 } // }}}
 
 func dbProduct() *md.MongoDB { // {{{
@@ -46,19 +60,25 @@ func dbProduct() *md.MongoDB { // {{{
 	return mg
 } // }}}
 
-func _TestGetPostData(t *testing.T) { // {{{
-	vars, tmongo, coauth := dbTest()
-	err := tmongo.SetSession()
+func _TestGetRndLoc(t *testing.T) { // {{{
+	vars, tmongo, coauth, err := dbTest()
 	if err != nil {
-		t.Error("error set session: ", err)
+		t.Error("err db: ", err)
 	}
 
-	fmt.Println("start router")
+	// fmt.Println("start router")
 	testRouter := SetupRouter(vars, tmongo, coauth)
 
 	// start make requests
-	getRndPoint, err := http.NewRequest("GET", "/api/v1/points/random", nil)
-	getPoints, err := http.NewRequest("GET", "/api/v1/points", nil)
+	getRndPoint, err := http.NewRequest("GET", "/api/v1/rndpoints/", nil)
+
+	type Res struct {
+		Msg  string         `json:"msg"`
+		Body md.GeoLocation `json:"body"`
+	}
+
+	res := Res{}
+	empty_point := md.GeoLocation{}
 
 	wg := &sync.WaitGroup{}
 	for count := 0; count < 2; count++ {
@@ -67,25 +87,26 @@ func _TestGetPostData(t *testing.T) { // {{{
 			defer wg.Done()
 			response := httptest.NewRecorder()
 			testRouter.ServeHTTP(response, getRndPoint)
-			testRouter.ServeHTTP(response, getPoints)
-			fmt.Println(response.Body)
+			err = json.Unmarshal(response.Body.Bytes(), &res)
+			if res.Body == empty_point {
+				t.Error("error, empty put point")
+			}
 		}()
+	}
+	if err != nil {
+		t.Errorf("error put point: %v", err)
 	}
 	wg.Wait()
 } // }}}
 
-func _TestPoint(t *testing.T) { // {{{
+func _TestLocation(t *testing.T) { // {{{
 	num_request := 6
 
-	vars, tmongo, coauth := dbTest()
-	err := tmongo.SetSession()
+	vars, tmongo, coauth, err := dbTest()
 	if err != nil {
-		t.Error("error set session: ", err)
+		t.Error("err db: ", err)
 	}
-	err = tmongo.Init()
-	if err != nil {
-		t.Error("error init in testPoint: ", err)
-	}
+
 	testRouter := SetupRouter(vars, tmongo, coauth)
 
 	// start make requests
@@ -108,7 +129,7 @@ func _TestPoint(t *testing.T) { // {{{
 	wg.Wait()
 
 	type Res struct {
-		Msg  string        `json:"msg"`
+		Msg  string           `json:"msg"`
 		Body []md.GeoLocation `json:"body"`
 	}
 
@@ -124,20 +145,16 @@ func _TestPoint(t *testing.T) { // {{{
 	}
 } // }}}
 
-func _TestPutPoint(t *testing.T) { // {{{
-	vars, tmongo, coauth := dbTest()
-	err := tmongo.SetSession()
+func _TestPutLocation(t *testing.T) { // {{{
+	vars, tmongo, coauth, err := dbTest()
 	if err != nil {
-		t.Error("error set session: ", err)
+		t.Error("err db: ", err)
 	}
-	err = tmongo.Init()
-	if err != nil {
-		t.Error("error init in testPoint: ", err)
-	}
+
 	testRouter := SetupRouter(vars, tmongo, coauth)
 
 	type Res struct {
-		Msg  string      `json:"msg"`
+		Msg  string         `json:"msg"`
 		Body md.GeoLocation `json:"body"`
 	}
 
@@ -232,14 +249,9 @@ func _TestPutPoint(t *testing.T) { // {{{
 func _TestGeoState(t *testing.T) { // {{{
 	num_request := 5
 
-	vars, tmongo, coauth := dbTest()
-	err := tmongo.SetSession()
+	vars, tmongo, coauth, err := dbTest()
 	if err != nil {
-		t.Error("error set session: ", err)
-	}
-	err = tmongo.Init()
-	if err != nil {
-		t.Error("error init in testPoint: ", err)
+		t.Error("err db: ", err)
 	}
 	testRouter := SetupRouter(vars, tmongo, coauth)
 
@@ -262,7 +274,65 @@ func _TestGeoState(t *testing.T) { // {{{
 	}
 	wg.Wait()
 
-	if len(vars.geoState.Points) != num_request {
+	if len(vars.geoState.Locations) != num_request {
 		t.Error("error, count post point to geostate don't coincides with get all point")
 	}
 } // }}}
+
+func TestGetNearLoc(t *testing.T) {
+	vars, tmongo, coauth, err := dbTest()
+	if err != nil {
+		t.Error("err db: ", err)
+	}
+
+	err = tmongo.FillRnd(100)
+	if err != nil {
+		t.Error("err fill rnd: ", err)
+	}
+
+	// fmt.Println("start router")
+	testRouter := SetupRouter(vars, tmongo, coauth)
+
+	// start make requests
+
+	type Res struct {
+		Msg  string           `json:"msg"`
+		Body []md.GeoLocation `json:"body"`
+	}
+
+	type ReqNear struct {
+		Distance int            `form:"distance" json:"distance"`
+		GeoLoc   md.GeoLocation `form:"geoloc" json:"geoloc"`
+	}
+
+	res := Res{}
+
+	req := ReqNear{}
+	req.GeoLoc.SetRnd()
+	req.Distance = 1000000
+	jreq, _ := json.Marshal(req)
+
+	// fmt.Println(string(jreq))
+
+	wg := &sync.WaitGroup{}
+	for count := 0; count < 2; count++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			getNearLoc, err := http.NewRequest("GET", "/api/v1/points/near", bytes.NewBuffer(jreq))
+			if err != nil {
+				t.Error("err nearloc: ", err)
+			}
+			response := httptest.NewRecorder()
+			testRouter.ServeHTTP(response, getNearLoc)
+			err = json.Unmarshal(response.Body.Bytes(), &res)
+			if len(res.Body) == 0 {
+				t.Error("error, empty near locations: ", res.Msg)
+			}
+		}()
+	}
+	if err != nil {
+		t.Errorf("error get near loc: %v", err)
+	}
+	wg.Wait()
+}

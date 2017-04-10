@@ -75,21 +75,21 @@ type (
 // id GeoLocation should be id user/event/group
 type (
 	GeoObject struct {
-		Type        string     `json:"-"`
-		Coordinates [2]float64 `json:"coordinates,omitempty"`
+		Type        string     `json:"type"`
+		Coordinates [2]float64 `json:"coordinates"`
 	}
 
 	GeoLocation struct {
-		Id       bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Token    string        `form:"token" binding:"required" bson:"token,omitempty"`
-		Location GeoObject     `form:"location" bson:"location,omitempty"`
+		Id       bson.ObjectId `form:"_id" json:"_id" bson:"_id,omitempty"`
+		Token    string        `form:"token" json:"token" bson:"token,omitempty"`
+		Location GeoObject     `form:"location" json:"location" bson:"location,omitempty"`
 	}
 
 	GeoLocations []GeoLocation
 
 	// GeoState is map(array) of locs
 	GeoState struct {
-		locs map[bson.ObjectId]GeoLocation
+		Locations map[bson.ObjectId]GeoLocation
 		sync.RWMutex
 	}
 )
@@ -118,7 +118,7 @@ func RandToken(length int) string {
 // NewGeoState will return a new state {{{
 func NewGeoState() *GeoState {
 	return &GeoState{
-		locs: make(map[bson.ObjectId]GeoLocation),
+		Locations: make(map[bson.ObjectId]GeoLocation),
 	}
 } // }}}
 
@@ -126,7 +126,7 @@ func NewGeoState() *GeoState {
 func (geost *GeoState) Add(point *GeoLocation) {
 	geost.Lock()
 	defer geost.Unlock()
-	geost.locs[point.Id] = *point
+	geost.Locations[point.Id] = *point
 } // }}}
 
 // SetRnd fill GeoState the n locs {{{
@@ -137,7 +137,7 @@ func (geost *GeoState) SetRnd(num int) {
 	point := new(GeoLocation)
 	for i := 0; i < num; i++ {
 		point.SetRnd()
-		geost.locs[point.Id] = *point
+		geost.Locations[point.Id] = *point
 	}
 } // }}}
 
@@ -151,19 +151,19 @@ func (geost *GeoState) Clear() {
 	geost.Lock()
 	defer geost.Unlock()
 
-	geost.locs = make(map[bson.ObjectId]GeoLocation)
+	geost.Locations = make(map[bson.ObjectId]GeoLocation)
 } // }}}
 
 // Len return lenght state {{{
 func (geost *GeoState) Len() int {
-	return len(geost.locs)
+	return len(geost.Locations)
 } // }}}
 
 // GetLoc new point with token {{{
 func (geost *GeoState) GetLoc(id bson.ObjectId) (point GeoLocation, ok bool) {
 	geost.Lock()
 	defer geost.Unlock()
-	point, ok = geost.locs[id]
+	point, ok = geost.Locations[id]
 	return point, ok
 } // }}}
 
