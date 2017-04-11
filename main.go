@@ -4,12 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"dvij.geoloc/chat"
-	"dvij.geoloc/conf"
-	"dvij.geoloc/geoloc"
+	ct "dvij.geoloc/ctgeos"
 )
-
-var MsgState *conf.MsgState
 
 func main() {
 	// processing console arguments
@@ -36,12 +32,12 @@ func printFullHelp() {
 	fmt.Println("========================================")
 	fmt.Println("arguments for start:")
 	fmt.Println("========================================")
-	fmt.Println("start initdb - full init database")
+	fmt.Println("start init - full init db")
 	fmt.Println("be wary, old data will be dropped")
 	fmt.Println("====================")
-	fmt.Println("start geoloc - start only geolocation server")
+	fmt.Println("start geoloc - geolocation server")
 	fmt.Println("====================")
-	fmt.Println("start chat - start only chat hub")
+	fmt.Println("start chat - chat hub")
 	fmt.Println("====================")
 	fmt.Println("start std - start all std services with default parameters")
 	fmt.Println("========================================")
@@ -50,13 +46,21 @@ func printFullHelp() {
 func start(args []string) {
 	switch args[2] {
 	case "std":
-		geoloc.Start(args)
+		ct.Start(args)
 	case "geoloc":
-		geoloc.Start(args)
-	case "initdb":
-		geoloc.StartInitDB()
-	case "chat":
-		chat.Start(args)
+		ct.Start(args)
+	case "init":
+		err := ct.InitDB()
+		if err != nil {
+			fmt.Printf("\nsomething wrong with init database: %v\n", err)
+		} else {
+			fmt.Println("====================")
+			fmt.Println("init db successful complete.")
+			fmt.Println("====================")
+		}
+
+	// case "chat":
+	// ct.StartChat(args)
 	default:
 		fmt.Println("---------------")
 		fmt.Println("ERROR")

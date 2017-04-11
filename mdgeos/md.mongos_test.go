@@ -21,6 +21,7 @@ func dbTest() (mg *MongoDB, err error) {
 	if err != nil {
 		return mg, err
 	}
+
 	return mg, err
 }
 

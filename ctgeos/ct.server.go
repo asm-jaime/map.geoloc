@@ -85,7 +85,7 @@ func MiddleNoRoute(c *gin.Context) { // {{{
 
 // ========== init server
 
-func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
+func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine { // {{{
 	router := gin.Default()
 	// support sessions
 	store := sessions.NewCookieStore([]byte(md.RandToken(64)))
@@ -163,9 +163,34 @@ func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engin
 	router.NoRoute(MiddleNoRoute)
 
 	return router
-}
+} // }}}
 
-func Start(args []string) (err error) {
+func InitDB() (err error) { // {{{
+	mongo := md.MongoDB{}
+	mongo.SetDefault()
+	err = mongo.SetSession()
+	if err != nil {
+		return err
+	}
+	defer mongo.Session.Close()
+
+	err = mongo.Drop()
+	if err != nil {
+		return err
+	}
+	err = mongo.Init()
+	if err != nil {
+		return err
+	}
+	err = mongo.FillRnd(10)
+	if err != nil {
+		return err
+	}
+
+	return err
+} // }}}
+
+func Start(args []string) (err error) { // {{{
 	// init config
 	config := conf.ServerConfig{}
 	config.SetDefault()
@@ -210,6 +235,6 @@ func Start(args []string) (err error) {
 
 	// star server
 	router := SetupRouter(&vars, &mongo, &coauth)
-	router.Run(config.Port)
+	router.Run(":" + config.Port)
 	return err
-}
+} // }}}

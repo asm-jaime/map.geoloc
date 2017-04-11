@@ -47,8 +47,7 @@ func (mongo *MongoDB) SetDefault() { // {{{
 	}
 } // }}}
 
-// MgoConfig return all data of config for connect to mongoDB {{{
-func (mongo *MongoDB) MgoConfig() *mgo.DialInfo {
+func (mongo *MongoDB) MgoConfig() *mgo.DialInfo { // {{{
 	info := &mgo.DialInfo{
 		Addrs:    []string{mongo.Addrs},
 		Timeout:  60 * time.Second,
@@ -63,8 +62,7 @@ func (mongo *MongoDB) MgoConfig() *mgo.DialInfo {
 
 // ========== sessions
 
-// SetSession set a new session
-func (mongo *MongoDB) SetSession() (err error) {
+func (mongo *MongoDB) SetSession() (err error) { // {{{
 	mongo.Session, err = mgo.DialWithInfo(mongo.Info)
 	if err != nil {
 		mongo.Session, err = mgo.Dial(mongo.Host)
@@ -73,7 +71,7 @@ func (mongo *MongoDB) SetSession() (err error) {
 		}
 	}
 	return err
-}
+} // }}}
 
 // ========== database init
 
@@ -488,7 +486,7 @@ func (mongo *MongoDB) DelLoc(point *GeoLocation) (err error) { // {{{
 	return err
 } // }}}
 
-func (mongo *MongoDB) GetNearLoc(point *GeoLocation, scope int) (locs []GeoLocation, err error) {
+func (mongo *MongoDB) GetNearLoc(point *GeoLocation, scope int) (locs []GeoLocation, err error) { // {{{
 	// fmt.Printf("\nloc: %v\n, dist: %v\n", point, scope)
 	session := mongo.Session.Clone()
 	defer session.Close()
@@ -506,7 +504,7 @@ func (mongo *MongoDB) GetNearLoc(point *GeoLocation, scope int) (locs []GeoLocat
 	}).All(&locs)
 
 	return locs, err
-}
+} // }}}
 
 // ========== geostate
 
