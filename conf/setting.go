@@ -3,7 +3,6 @@ package conf
 import (
 	//"errors"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -53,16 +52,15 @@ const (
 )
 
 // MakeHTTPSCertV1 If cert files are not available, generate new ones.
-func MakeHTTPSCertV1(nameCert string, nameKey string, hostName string) *ApiError {
-	err := httpscerts.Check(nameCert, nameKey)
+func MakeHTTPSCertV1(nameCert string, nameKey string, hostName string) (err error) {
+	err = httpscerts.Check(nameCert, nameKey)
 	if err != nil {
 		err = httpscerts.Generate(nameCert, nameKey, hostName)
 		if err != nil {
-			fmt.Print("Error: Couldn't create https certs.")
-			return ErrHTTPSCert
+			return err
 		}
 	}
-	return nil
+	return err
 }
 
 // Credentials stored a google cred.

@@ -85,7 +85,7 @@ func MiddleNoRoute(c *gin.Context) { // {{{
 
 // ========== init server
 
-func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine { // {{{
+func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
 	router := gin.Default()
 	// support sessions
 	store := sessions.NewCookieStore([]byte(md.RandToken(64)))
@@ -111,42 +111,43 @@ func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engin
 		{
 			user := v1.Group("users")
 			{
+				user.GET("", GetUser)
+				user.POST("", PostUser)
+				user.PUT("", PutUser)
+				user.DELETE("", DelUser)
+
 				user.GET("/all", GetUsers)
-				user.GET("/", GetUser)
-				user.POST("/", PostUser)
-				user.PUT("/", PutUser)
-				user.DELETE("/", DelUser)
 			}
 			event := v1.Group("events")
 			{
+				event.GET("", GetEvent)
+				event.POST("", PostEvent)
+				event.PUT("", PutEvent)
+				event.DELETE("", DelEvent)
+
 				event.GET("/all", GetEvents)
-				event.GET("/", GetEvent)
-				event.POST("/", PostEvent)
-				event.PUT("/", PutEvent)
-				event.DELETE("/", DelEvent)
 			}
 			group := v1.Group("groups")
 			{
+				group.GET("", GetGroup)
+				group.POST("", PostGroup)
+				group.PUT("", PutGroup)
+				group.DELETE("", DelGroup)
+
 				group.GET("/all", GetGroups)
-				group.GET("/", GetGroup)
-				group.POST("/", PostGroup)
-				group.PUT("/", PutGroup)
-				group.DELETE("/", DelGroup)
 			}
 			point := v1.Group("points")
 			point.Use(MiddleVars(vars))
 			{
+				point.GET("", GetLoc)
+				point.POST("", PostLoc)
+				point.PUT("", PutLoc)
+				point.DELETE("", DelLoc)
+
 				point.GET("/all", GetLocs)
+				point.GET("/rnd", GetRndLoc)
 				point.GET("/near", GetNearLoc)
-				point.GET("/", GetLoc)
-				point.POST("/", PostLoc)
 				point.POST("/state", PostLocToGeoState)
-				point.PUT("/", PutPoint)
-				point.DELETE("/", DelLoc)
-			}
-			rndpoint := v1.Group("rndpoints")
-			{
-				rndpoint.GET("/", GetRndPoint)
 			}
 			auth := v1.Group("auth")
 			{
@@ -156,14 +157,14 @@ func SetupRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engin
 			lock := v1.Group("/lock")
 			{
 				lock.Use(MiddleAuth(oauth))
-				lock.GET("/", GetLocs)
+				lock.GET("", GetLocs)
 			}
 		}
 	}
 	router.NoRoute(MiddleNoRoute)
 
 	return router
-} // }}}
+}
 
 func InitDB() (err error) { // {{{
 	mongo := md.MongoDB{}
@@ -234,7 +235,7 @@ func Start(args []string) (err error) { // {{{
 	fmt.Println("---------------")
 
 	// star server
-	router := SetupRouter(&vars, &mongo, &coauth)
+	router := NewRouter(&vars, &mongo, &coauth)
 	router.Run(":" + config.Port)
 	return err
 } // }}}

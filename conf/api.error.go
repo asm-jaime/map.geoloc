@@ -1,84 +1,27 @@
 package conf
 
-import (
-	"fmt"
-	"net/http"
+// "os"
 
-	"github.com/gin-gonic/gin"
-	// "os"
+const (
+	Database      = "An unknown error occurred."
+	Session       = "An unknown error occurred."
+	InvalidSet    = "The set you requested does not exist."
+	InvalidFind   = "The find you requested does not exist."
+	InvalidInsert = "The insert you requested does not exist."
+	InvalidUpdate = "The update you requested does not exist."
+	InvalidGroup  = "The group you requested does not exist."
+	HTTPSCert     = "filest with cert does not exist."
+	JSON          = "error of json.marshal."
+	NoError       = "No error."
 )
 
-// ApiError structure for processing errors
-type ApiError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Href    string `json:"href"`
-}
-
-// NewApiError
-func NewApiError(err error) *ApiError {
-	if err == nil {
-		return ErrNoError
-	} else {
-		return &ApiError{http.StatusInternalServerError, err.Error(), ""}
-	}
-}
-
-func (err *ApiError) Error() string {
-	return err.Message
-}
-
-func (err *ApiError) PrintError() {
-	fmt.Printf("\ncode: %d, %s", err.Code, err.Message)
-	if err.Href != "" {
-		fmt.Print(err.Href)
-	}
-}
-
-var (
-	ErrDatabase      = &ApiError{http.StatusInternalServerError, "An unknown error occurred.", ""}
-	ErrSession       = &ApiError{http.StatusInternalServerError, "An unknown error occurred.", ""}
-	ErrInvalidSet    = &ApiError{http.StatusInternalServerError, "The set you requested does not exist.", ""}
-	ErrInvalidFind   = &ApiError{http.StatusInternalServerError, "The find you requested does not exist.", ""}
-	ErrInvalidInsert = &ApiError{http.StatusInternalServerError, "The insert you requested does not exist.", ""}
-	ErrInvalidUpdate = &ApiError{http.StatusInternalServerError, "The update you requested does not exist.", ""}
-	ErrInvalidGroup  = &ApiError{http.StatusInternalServerError, "The group you requested does not exist.", ""}
-	ErrHTTPSCert     = &ApiError{http.StatusInternalServerError, "filest with cert does not exist.", ""}
-	ErrJSON          = &ApiError{http.StatusInternalServerError, "error of json.marshal.", ""}
-	ErrNoError       = &ApiError{0, "No error.", ""}
-)
-
-// type Header map[string]interface{}
-
-type Header gin.H
-
-type MsgState struct {
-	Errors   map[int]gin.H
-	Messages map[int]gin.H
-}
-
-// NewMsgState will return a new state
-func NewMsgState() *MsgState {
-	return &MsgState{
-		Errors:   make(map[int]gin.H),
-		Messages: make(map[int]gin.H),
-	}
-}
-
-// SetRnd fill GeoState the n points
-func (errst *MsgState) SetErrors() {
-	// good and info answer
-	errst.Messages[http.StatusOK] = gin.H{"status": 0, "message": "correct data", "body": nil}
-	// bad and error answer
-	errst.Errors[http.StatusBadRequest] = gin.H{"status": 1, "message": "Bad request, incorrect data", "body": nil}
-	errst.Errors[http.StatusInternalServerError] = gin.H{"status": 5, "message": "Internal error, server can't return correct data", "body": nil}
-	errst.Errors[http.StatusMethodNotAllowed] = gin.H{"status": 1, "message": "Method not allowed", "body": nil}
-	errst.Errors[http.StatusNotFound] = gin.H{"status": 3, "message": "Request not found", "body": nil}
-	errst.Errors[http.StatusRequestTimeout] = gin.H{"status": 10, "message": "url req not found", "body": nil}
-	errst.Errors[http.StatusNotImplemented] = gin.H{"status": 10, "message": "req not implemented", "body": nil}
-	errst.Errors[http.StatusNoContent] = gin.H{"status": 3, "message": "empty content", "body": nil}
-}
-
-func GiveResponse(some interface{}) (response *gin.H) {
-	return &gin.H{"status": 0, "message": "Success", "body": some}
-}
+/*
+"correct data", "body": nil}
+"Bad request, incorrect data", "body": nil}
+"Internal error, server can't return correct data", "body": nil}
+"Method not allowed", "body": nil}
+"Request not found", "body": nil}
+"url req not found", "body": nil}
+"req not implemented", "body": nil}
+"empty content", "body": nil}
+*/

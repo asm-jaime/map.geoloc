@@ -67,7 +67,7 @@ func _TestGetRndLoc(t *testing.T) { // {{{
 	}
 
 	// fmt.Println("start router")
-	testRouter := SetupRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth)
 
 	// start make requests
 	getRndPoint, err := http.NewRequest("GET", "/api/v1/rndpoints/", nil)
@@ -107,7 +107,7 @@ func _TestLocation(t *testing.T) { // {{{
 		t.Error("err db: ", err)
 	}
 
-	testRouter := SetupRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth)
 
 	// start make requests
 
@@ -151,7 +151,7 @@ func _TestPutLocation(t *testing.T) { // {{{
 		t.Error("err db: ", err)
 	}
 
-	testRouter := SetupRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth)
 
 	type Res struct {
 		Msg  string         `json:"msg"`
@@ -253,7 +253,7 @@ func _TestGeoState(t *testing.T) { // {{{
 	if err != nil {
 		t.Error("err db: ", err)
 	}
-	testRouter := SetupRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth)
 
 	// start make requests
 
@@ -291,7 +291,7 @@ func TestGetNearLoc(t *testing.T) {
 	}
 
 	// fmt.Println("start router")
-	testRouter := SetupRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth)
 
 	// start make requests
 

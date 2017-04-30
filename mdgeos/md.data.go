@@ -75,8 +75,8 @@ type (
 // id GeoLocation should be id user/event/group
 type (
 	GeoObject struct {
-		Type        string     `json:"type"`
-		Coordinates [2]float64 `json:"coordinates"`
+		Type        string     `json:"type,omitempty"`
+		Coordinates [2]float64 `json:"coordinates,omitempty"`
 	}
 
 	GeoLocation struct {

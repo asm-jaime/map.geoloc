@@ -389,7 +389,7 @@ func PostLoc(c *gin.Context) { // {{{
 	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": point})
 } // }}}
 
-func PutPoint(c *gin.Context) { // {{{
+func PutLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
@@ -462,9 +462,14 @@ func PostLocToGeoState(c *gin.Context) { // {{{
 
 //========== random
 
-func GetRndPoint(c *gin.Context) { // {{{
-	var req md.GeoLocation
-	req.SetRnd()
+func GetRndLoc(c *gin.Context) { // {{{
+	var req []md.GeoLocation
+	geoloc := md.GeoLocation{}
+
+	for i := 0; i < 20; i++ {
+		geoloc.SetRnd()
+		req = append(req, geoloc)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"msg": "get rnd point complete", "body": req})
 } // }}}
