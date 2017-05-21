@@ -2,6 +2,7 @@ package mdgeos
 
 import (
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 )
@@ -124,7 +125,7 @@ func _TestLocation(t *testing.T) { // {{{
 	}
 } // }}}
 
-func TestNearLoc(t *testing.T) {
+func _TestNearLoc(t *testing.T) { // {{{
 	num := 100
 	tdb, err := dbTest()
 	if err != nil {
@@ -135,10 +136,41 @@ func TestNearLoc(t *testing.T) {
 		t.Error("err Fill: ", err)
 	}
 
-	point := GeoLocation{}
-	point.SetRnd()
+	req := ReqNear{}
+	req.Scope = 5000000
+	req.TypeGeo = "Point"
+	//latitude in degrees is -90 and +90
+	req.Lat = (rand.Float64() * 180) - 90
+	//Longitude is in the range -180 and +180
+	req.Lng = (rand.Float64() * 360) - 180
 
-	locs, err := tdb.GetNearLoc(&point, 1000000)
+	locs, err := tdb.GetNearLoc(&req)
+
+	fmt.Printf("\nlocs: %v\n", locs)
+} // }}}
+
+func TestFilteredLoc(t *testing.T) {
+	num := 100
+	tdb, err := dbTest()
+	if err != nil {
+		t.Error("err connect db in FillRnd: ", err)
+	}
+	err = tdb.FillRnd(num)
+	if err != nil {
+		t.Error("err Fill: ", err)
+	}
+
+	req := ReqFilter{}
+	req.Scope = 5000000
+	req.TypeGeo = "Point"
+	req.TypeObject = "User"
+	//latitude in degrees is -90 and +90
+	req.Lat = (rand.Float64() * 180) - 90
+	//Longitude is in the range -180 and +180
+	req.Lng = (rand.Float64() * 360) - 180
+	//req.TypeTime
+
+	locs, err := tdb.GetFilteredLoc(&req)
 
 	fmt.Printf("\nlocs: %v\n", locs)
 

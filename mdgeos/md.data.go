@@ -80,9 +80,12 @@ type (
 	}
 
 	GeoLocation struct {
-		Id       bson.ObjectId `form:"_id" json:"_id" bson:"_id,omitempty"`
-		Token    string        `form:"token" json:"token" bson:"token,omitempty"`
-		Location GeoObject     `form:"location" json:"location" bson:"location,omitempty"`
+		Id         bson.ObjectId `form:"_id" json:"_id,omitempty" bson:"_id,omitempty"`
+		Token      string        `form:"token" json:"token,omitempty" bson:"token,omitempty"`
+		TypeObject string        `form:"typeobject" json:"typeobject,omitempty" bson:"typeobject,omitempty"`
+		Location   GeoObject     `form:"location" json:"location,omitempty" bson:"location,omitempty"`
+
+		Timestamp time.Time `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
 	}
 
 	GeoLocations []GeoLocation
@@ -91,6 +94,22 @@ type (
 	GeoState struct {
 		Locations map[bson.ObjectId]GeoLocation
 		sync.RWMutex
+	}
+
+	ReqNear struct {
+		Scope   int     `form:"scope" json:"scope,omitempty"`
+		TypeGeo string  `form:"typegeo" json:"typegeo,omitempty"`
+		Lat     float64 `form:"lat" json:"lat,omitempty"`
+		Lng     float64 `form:"lng" json:"lng,omitempty"`
+	}
+
+	ReqFilter struct {
+		Scope      int     `form:"scope" json:"scope,omitempty"`
+		TypeGeo    string  `form:"typegeo" json:"typegeo,omitempty"`
+		TypeObject string  `form:"typeobject" json:"typeobject,omitempty"`
+		TypeTime   string  `form:"typetime" json:"typetime,omitempty"`
+		Lat        float64 `form:"lat" json:"lat,omitempty"`
+		Lng        float64 `form:"lng" json:"lng,omitempty"`
 	}
 )
 
@@ -170,11 +189,18 @@ func (geost *GeoState) GetLoc(id bson.ObjectId) (point GeoLocation, ok bool) {
 // ========== GeoLocation
 
 func (point *GeoLocation) SetRnd() {
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	point.Id = bson.NewObjectId()
 	point.Token = RndStr(8)
-	point.Location.Type = "Point"
-	point.Location.Coordinates[0] = (rand.Float64() * 5) + 5
-	point.Location.Coordinates[1] = (rand.Float64() * 5) + 5
+	point.TypeObject = []string{"User", "Event", "Group"}[rnd.Intn(3)]
+
+	point.Timestamp = time.Now().Add(-rnd.Intn(100) * time.Hour)
+
+	point.Location.Type = []string{"Point"}[0]
+	//longitude is in the range -180 and +180
+	point.Location.Coordinates[0] = (rnd.Float64() * 360) - 180
+	//latitude in degrees is -90 and +90
+	point.Location.Coordinates[1] = (rnd.Float64() * 180) - 90
 }
 
 func (point *GeoLocation) GetDistance(toPoint *GeoLocation) (distance float64) { // {{{

@@ -147,6 +147,7 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine 
 				point.GET("/all", GetLocs)
 				point.GET("/rnd", GetRndLoc)
 				point.GET("/near", GetNearLoc)
+				point.GET("/filtered", GetFilteredLoc)
 				point.POST("/state", PostLocToGeoState)
 			}
 			auth := v1.Group("auth")

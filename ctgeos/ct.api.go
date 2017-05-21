@@ -1,6 +1,7 @@
 package ctgeos
 
 import (
+	"fmt"
 	"net/http"
 
 	// "dvij.geoloc/conf"
@@ -380,6 +381,7 @@ func PostLoc(c *gin.Context) { // {{{
 		return
 	}
 
+	fmt.Println(req)
 	point, err := mongo.PostLoc(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
@@ -513,29 +515,50 @@ func GetDistance(c *gin.Context) { // {{{
 
 // ========== positioning location
 
-// func GetNearLoc
-type ReqNear struct {
-	Distance int            `json:"distance"`
-	GeoLoc   md.GeoLocation `json:"geoloc"`
-}
-
-func GetNearLoc(c *gin.Context) {
+func GetNearLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
-	var req ReqNear
-	err := c.BindJSON(&req)
+	var req md.ReqNear
+	err := c.Bind(&req)
+	fmt.Println(req)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	locs, err := mongo.GetNearLoc(&req.GeoLoc, req.Distance)
+	locs, err := mongo.GetNearLoc(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": locs})
 	}
-}
+} // }}}
+
+// ========== filtered location
+
+func GetFilteredLoc(c *gin.Context) { // {{{
+	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+	}
+
+	var req md.ReqFilter
+	err := c.Bind(&req)
+	fmt.Println(req)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		return
+	}
+
+	locs, err := mongo.GetFilteredLoc(&req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"msg": "get filtered points complete", "body": locs})
+	}
+} // }}}
