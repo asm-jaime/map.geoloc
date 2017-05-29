@@ -5,9 +5,11 @@ import (
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func dbTest() (mg *MongoDB, err error) {
+func dbTest() (mg *MongoDB, err error) { // {{{
 	mg = &MongoDB{}
 	mg.SetDefault()
 	mg.Database = "test"
@@ -24,14 +26,14 @@ func dbTest() (mg *MongoDB, err error) {
 	}
 
 	return mg, err
-}
+} // }}}
 
-func dbProduct() *MongoDB {
+func dbProduct() *MongoDB { // {{{
 	mg := &MongoDB{}
 	mg.SetDefault()
 	mg.Info = mg.MgoConfig()
 	return mg
-}
+} // }}}
 
 func _TestSession(t *testing.T) { // {{{
 } // }}}
@@ -138,7 +140,7 @@ func _TestNearLoc(t *testing.T) { // {{{
 
 	req := ReqNear{}
 	req.Scope = 5000000
-	req.TypeGeo = "Point"
+	req.TGeos = "Point"
 	//latitude in degrees is -90 and +90
 	req.Lat = (rand.Float64() * 180) - 90
 	//Longitude is in the range -180 and +180
@@ -149,8 +151,8 @@ func _TestNearLoc(t *testing.T) { // {{{
 	fmt.Printf("\nlocs: %v\n", locs)
 } // }}}
 
-func TestFilteredLoc(t *testing.T) {
-	num := 100
+func _TestFilterLoc(t *testing.T) { // {{{
+	num := 500
 	tdb, err := dbTest()
 	if err != nil {
 		t.Error("err connect db in FillRnd: ", err)
@@ -159,19 +161,71 @@ func TestFilteredLoc(t *testing.T) {
 	if err != nil {
 		t.Error("err Fill: ", err)
 	}
+	// case user today
+	{
+		req := ReqFilter{}
+		req.Scope = 5000000
+		req.TGeos = "Point"
+		req.TObject = "User"
+		req.TTime = "Today"
+		//latitude in degrees is -90 and +90
+		req.Lat = (rand.Float64() * 180) - 90
+		//Longitude is in the range -180 and +180
+		req.Lng = (rand.Float64() * 360) - 180
+		//req.TTime
+		locs, err := tdb.GetFilterLoc(&req)
+		if err != nil {
+			t.Error("err in filled: ", err)
+		}
+		assert.Equal(t, time.Now().Day(), locs[0].Timestamp.Day(), "day does not match")
+	}
 
-	req := ReqFilter{}
-	req.Scope = 5000000
-	req.TypeGeo = "Point"
-	req.TypeObject = "User"
-	//latitude in degrees is -90 and +90
-	req.Lat = (rand.Float64() * 180) - 90
-	//Longitude is in the range -180 and +180
-	req.Lng = (rand.Float64() * 360) - 180
-	//req.TypeTime
+	// case user recently
+	{
+		req := ReqFilter{}
+		req.Scope = 5000000
+		req.TGeos = "Point"
+		req.TObject = ""
+		req.TTime = "Recently"
+		//latitude in degrees is -90 and +90
+		req.Lat = (rand.Float64() * 180) - 90
+		//Longitude is in the range -180 and +180
+		req.Lng = (rand.Float64() * 360) - 180
+		//req.TTime
+		locs, err := tdb.GetFilterLoc(&req)
+		if err != nil {
+			t.Error("err in filled: ", err)
+		}
+		fmt.Printf("\nlocs: %v\n", locs)
+	}
+} // }}}
 
-	locs, err := tdb.GetFilteredLoc(&req)
+func TestGeoEvent(t *testing.T) {
+	tdb, err := dbTest()
 
-	fmt.Printf("\nlocs: %v\n", locs)
+	if err != nil {
+		t.Error("err connect db in FillRnd: ", err)
+	}
 
+	// case post/get
+	{
+		loc := GeoLocation{}
+		loc.SetRnd()
+		event := Event{}
+		event.SetRnd()
+		geoevent := ReqGeoEvent{}
+		geoevent.Event = event
+		geoevent.GeoLoc = loc
+		id, err := tdb.PostGeoEvent(&geoevent)
+		if err != nil {
+			t.Error("err post geoevent: ", err)
+		}
+
+		loc.Id = id.Id
+		gloc, err := tdb.GetLoc(&loc)
+		if err != nil {
+			t.Error("err get: ", err)
+		}
+		assert.Equal(t, loc.Token, gloc.Token, "token does not match")
+	}
 }
