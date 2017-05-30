@@ -185,7 +185,7 @@ func InitDB() (err error) { // {{{
 	if err != nil {
 		return err
 	}
-	err = mongo.FillRnd(10)
+	err = mongo.FillRnd(100)
 	if err != nil {
 		return err
 	}

@@ -48,6 +48,7 @@ type (
 		TTLEvent    time.Time     `form:"ttl" bson:"ttl,omitempty"`
 		Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
 		Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
+		Timestamp   time.Time     `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
 	}
 )
 
@@ -80,13 +81,10 @@ type (
 	}
 
 	GeoLocation struct {
-		Id bson.ObjectId `form:"_id" json:"_id,omitempty" bson:"_id,omitempty"`
-
-		Token    string    `form:"token" json:"token,omitempty" bson:"token,omitempty"`
-		TObject  string    `form:"tobject" json:"tobject,omitempty" bson:"tobject,omitempty"`
-		Location GeoObject `form:"location" json:"location,omitempty" bson:"location,omitempty"`
-
-		Timestamp time.Time `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
+		Id       bson.ObjectId `form:"_id" json:"_id,omitempty" bson:"_id,omitempty"`
+		Token    string        `form:"token" json:"token,omitempty" bson:"token,omitempty"`
+		TObject  string        `form:"tobject" json:"tobject,omitempty" bson:"tobject,omitempty"`
+		Location GeoObject     `form:"location" json:"location,omitempty" bson:"location,omitempty"`
 	}
 
 	GeoLocations []GeoLocation
@@ -205,8 +203,6 @@ func (point *GeoLocation) SetRnd() { // {{{
 	point.Token = RndStr(8)
 	point.TObject = []string{"User", "Event", "Group"}[rnd.Intn(3)]
 
-	point.Timestamp = time.Now().Add(-time.Duration(rnd.Intn(100)) * time.Hour)
-
 	point.Location.Type = []string{"Point"}[0]
 	//latitude in degrees is -90 and +90
 	point.Location.Coordinates[1] = (rnd.Float64() * 180) - 90
@@ -233,9 +229,11 @@ func (user *User) SetRnd() { // {{{
 // ========== event
 
 func (event *Event) SetRnd() { // {{{
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	event.Id = bson.NewObjectId()
 	event.Name = "event: " + string(event.Id)
 	event.Description = "descr: " + RndStr(10)
+	event.Timestamp = time.Now().Add(-time.Duration(rnd.Intn(100)) * time.Hour)
 	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
 } // }}}
 

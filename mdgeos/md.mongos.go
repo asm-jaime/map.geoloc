@@ -208,6 +208,7 @@ func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 		point.SetRnd()
 		userRef.Id = user.Id
 		point.Id = user.Id
+		point.TObject = "User"
 		userRef.Collection = "dviUsers"
 		*userRefs = append(*userRefs, *userRef)
 		err = session.DB(mongo.Database).C("dviUsers").Insert(&user)
@@ -222,6 +223,7 @@ func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 		event.SetRnd()
 		point.SetRnd()
 		point.Id = event.Id
+		point.TObject = "Event"
 		event.Users = *userRefs
 		err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
 		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
