@@ -144,6 +144,8 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine 
 				point.PUT("", PutLoc)
 				point.DELETE("", DelLoc)
 
+				point.POST("/geoevent", PostGeoEvent)
+
 				point.GET("/all", GetLocs)
 				point.GET("/rnd", GetRndLoc)
 				point.GET("/near", GetNearLoc)
