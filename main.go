@@ -37,6 +37,8 @@ func printFullHelp() {
 	fmt.Println("====================")
 	fmt.Println("start geoloc - geolocation server")
 	fmt.Println("====================")
+	fmt.Println("start geoloc 8081 localhost conf/clientid.google.json ./public")
+	fmt.Println("====================")
 	fmt.Println("start chat - chat hub")
 	fmt.Println("====================")
 	fmt.Println("start std - start all std services with default parameters")

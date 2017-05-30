@@ -97,13 +97,13 @@ func LoginHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "", "body": link})
 } // }}}
 
-// FieldHandler is a rudementary handler for logged in users {{{
+// FieldHandler is a rudementary handler for logged in users
 func FieldHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	usermail := session.Get("user-id")
 	if usermail != "" {
 		c.JSON(http.StatusOK, gin.H{"msg": "get user-id succefull", "body": usermail})
 	} else {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "user-id didn't set", "body": nil})
+		c.JSON(http.StatusNotFound, gin.H{"msg": "user-id 0 have not set", "body": nil})
 	}
-} // }}}
+} // 0

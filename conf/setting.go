@@ -22,6 +22,7 @@ type ServerConfig struct {
 	Host         string
 	Port         string
 	KeyFile      string
+	StaticFolder string
 	IsProduction bool
 	Cred         Credentials
 }
@@ -38,6 +39,7 @@ func (config *ServerConfig) SetDefault() {
 
 	config.IsProduction = false
 	config.KeyFile = "conf/clientid.google.json"
+	config.StaticFolder = "./public"
 	config.Cred.Cid = "295529031882-ap6njd8e8p0bmggmvkb7t0iflhcetjn1.apps.googleusercontent.com"
 	config.Cred.Csecret = "ICiVhKO51UxbNfIQVR7WudxH"
 }

@@ -62,12 +62,13 @@ func dbProduct() *md.MongoDB { // {{{
 
 func _TestGetRndLoc(t *testing.T) { // {{{
 	vars, tmongo, coauth, err := dbTest()
+	config := &conf.ServerConfig{}
 	if err != nil {
 		t.Error("err db: ", err)
 	}
 
 	// fmt.Println("start router")
-	testRouter := NewRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth, config)
 
 	// start make requests
 	getRndPoint, err := http.NewRequest("GET", "/api/v1/rndpoints/", nil)
@@ -103,11 +104,12 @@ func _TestLocation(t *testing.T) { // {{{
 	num_request := 6
 
 	vars, tmongo, coauth, err := dbTest()
+	config := &conf.ServerConfig{}
 	if err != nil {
 		t.Error("err db: ", err)
 	}
 
-	testRouter := NewRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth, config)
 
 	// start make requests
 
@@ -147,11 +149,12 @@ func _TestLocation(t *testing.T) { // {{{
 
 func _TestPutLocation(t *testing.T) { // {{{
 	vars, tmongo, coauth, err := dbTest()
+	config := &conf.ServerConfig{}
 	if err != nil {
 		t.Error("err db: ", err)
 	}
 
-	testRouter := NewRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth, config)
 
 	type Res struct {
 		Msg  string         `json:"msg"`
@@ -250,10 +253,11 @@ func _TestGeoState(t *testing.T) { // {{{
 	num_request := 5
 
 	vars, tmongo, coauth, err := dbTest()
+	config := &conf.ServerConfig{}
 	if err != nil {
 		t.Error("err db: ", err)
 	}
-	testRouter := NewRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth, config)
 
 	// start make requests
 
@@ -279,19 +283,20 @@ func _TestGeoState(t *testing.T) { // {{{
 	}
 } // }}}
 
-func TestGetNearLoc(t *testing.T) {
+func TestGetNearLoc(t *testing.T) { // {{{
 	vars, tmongo, coauth, err := dbTest()
+	config := &conf.ServerConfig{}
 	if err != nil {
 		t.Error("err db: ", err)
 	}
 
-	err = tmongo.FillRnd(100)
+	err = tmongo.FillRnd(111)
 	if err != nil {
 		t.Error("err fill rnd: ", err)
 	}
 
 	// fmt.Println("start router")
-	testRouter := NewRouter(vars, tmongo, coauth)
+	testRouter := NewRouter(vars, tmongo, coauth, config)
 
 	// start make requests
 
@@ -335,4 +340,4 @@ func TestGetNearLoc(t *testing.T) {
 		t.Errorf("error get near loc: %v", err)
 	}
 	wg.Wait()
-}
+} // }}}

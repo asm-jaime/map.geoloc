@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 
 	"dvij.geoloc/conf"
 	md "dvij.geoloc/mdgeos"
@@ -85,7 +84,7 @@ func MiddleNoRoute(c *gin.Context) { // {{{
 
 // ========== init server
 
-func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine {
+func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config, config *conf.ServerConfig) *gin.Engine {
 	router := gin.Default()
 	// support sessions
 	store := sessions.NewCookieStore([]byte(md.RandToken(64)))
@@ -102,8 +101,8 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config) *gin.Engine 
 	router.Use(MiddleDB(mongo))
 
 	// frontend
-	router.Use(static.Serve("/", static.LocalFile("./public", true)))
-	router.LoadHTMLGlob("./public/index.html")
+	router.Use(static.Serve("/", static.LocalFile(config.StaticFolder, true)))
+	router.LoadHTMLGlob(config.StaticFolder + "/index.html")
 	// set api routes
 	api := router.Group("api")
 	{
@@ -213,6 +212,9 @@ func Start(args []string) (err error) { // {{{
 	if len(args) > 5 { // set name of keyfile
 		config.KeyFile = args[5]
 	}
+	if len(args) > 6 { // set name of keyfile
+		config.StaticFolder = args[6]
+	}
 	err = config.Cred.SetFromFile(config.KeyFile)
 	if err != nil {
 		fmt.Println(err)
@@ -227,7 +229,6 @@ func Start(args []string) (err error) { // {{{
 			"https://www.googleapis.com/auth/userinfo.email",
 			// scope: https://developers.google.com/identity/protocols/googlescopes#google_sign-in
 		},
-		Endpoint: google.Endpoint,
 	}
 
 	// info
@@ -235,10 +236,11 @@ func Start(args []string) (err error) { // {{{
 	fmt.Println("Selected port: " + config.Port)
 	fmt.Println("Selected host: " + config.Host)
 	fmt.Println("Selected filekey: " + config.KeyFile)
+	fmt.Println("Selected folder: " + config.StaticFolder)
 	fmt.Println("---------------")
 
 	// star server
-	router := NewRouter(&vars, &mongo, &coauth)
+	router := NewRouter(&vars, &mongo, &coauth, &config)
 	router.Run(":" + config.Port)
 	return err
 } // }}}
