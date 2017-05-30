@@ -198,16 +198,20 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
-
 	userRefs := new([]mgo.DBRef)
 	userRef := &mgo.DBRef{}
 	user := User{}
+	point := GeoLocation{}
+
 	for i := 0; i < num; i++ {
 		user.SetRnd()
+		point.SetRnd()
 		userRef.Id = user.Id
+		point.Id = user.Id
 		userRef.Collection = "dviUsers"
 		*userRefs = append(*userRefs, *userRef)
 		err = session.DB(mongo.Database).C("dviUsers").Insert(&user)
+		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 		if err != nil {
 			return err
 		}
@@ -216,22 +220,15 @@ func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 	event := Event{}
 	for i := 0; i < num; i++ {
 		event.SetRnd()
+		point.SetRnd()
+		point.Id = event.Id
 		event.Users = *userRefs
 		err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
-		if err != nil {
-			return err
-		}
-	}
-
-	point := GeoLocation{}
-	for i := 0; i < num; i++ {
-		point.SetRnd()
 		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 		if err != nil {
 			return err
 		}
 	}
-
 	return err
 } // }}}
 
