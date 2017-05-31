@@ -26,12 +26,13 @@ type DistanceReq struct {
 
 type (
 	User struct {
-		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Name        string        `form:"name" binding:"required" bson:"name"`
-		Email       string        `form:"email" binding:"required" bson:"email"`
-		Description string        `form:"description" binding:"required" bson:"description"`
-		Events      []mgo.DBRef   `form:"events" bson:"events,omitempty"`
-		Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
+		Id     bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name   string        `form:"name" binding:"required" bson:"name"`
+		Text   string        `form:"text" binding:"required" bson:"text"`
+		Tags   []string      `form:"tags" bson:"tags"`
+		Email  string        `form:"email" binding:"required" bson:"email"`
+		Events []mgo.DBRef   `form:"events" bson:"events,omitempty"`
+		Groups []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
 	}
 )
 
@@ -42,13 +43,14 @@ type (
 // Event struct for processing events
 type (
 	Event struct {
-		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Name        string        `form:"name" binding:"required" bson:"name"`
-		Description string        `form:"description" binding:"required" bson:"description"`
-		TTLEvent    time.Time     `form:"ttl" bson:"ttl,omitempty"`
-		Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
-		Groups      []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
-		Timestamp   time.Time     `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
+		Id        bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name      string        `form:"name" binding:"required" bson:"name"`
+		Text      string        `form:"text" bson:"text"`
+		Tags      []string      `form:"tags" bson:"tags"`
+		TTLEvent  time.Time     `form:"ttl" bson:"ttl,omitempty"`
+		Users     []mgo.DBRef   `form:"users" bson:"users,omitempty"`
+		Groups    []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
+		Timestamp time.Time     `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
 	}
 )
 
@@ -58,11 +60,12 @@ type (
 
 type (
 	Group struct {
-		Id          bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Name        string        `form:"name" binding:"required"`
-		Description string        `form:"description" binding:"required"`
-		Users       []mgo.DBRef   `form:"users" bson:"users,omitempty"`
-		Events      []mgo.DBRef   `form:"events" bson:"events,omitempty"`
+		Id     bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name   string        `form:"name" bson:"name,omitempty"`
+		Text   string        `form:"text" bson:"text,omitempty"`
+		Tags   []string      `form:"tags" bson:"tags,omitempty"`
+		Users  []mgo.DBRef   `form:"users" bson:"users,omitempty"`
+		Events []mgo.DBRef   `form:"events" bson:"events,omitempty"`
 	}
 
 	Groups    []Group
@@ -113,12 +116,27 @@ type (
 
 	ReqFilter struct {
 		Scope   int     `form:"scope" json:"scope,omitempty"`
-		Tags    string  `form:"tags" json:"tags,omitempty"`
 		TGeos   string  `form:"tgeos" json:"tgeos,omitempty"`
 		TObject string  `form:"tobject" json:"tobject,omitempty"`
-		TTime   string  `form:"ttime" json:"ttime,omitempty"`
 		Lat     float64 `form:"lat" json:"lat,omitempty"`
 		Lng     float64 `form:"lng" json:"lng,omitempty"`
+	}
+
+	ReqELFilter struct {
+		Scope int     `form:"scope" json:"scope,omitempty"`
+		Tags  string  `form:"tags" json:"tags,omitempty"`
+		TTime string  `form:"ttime" json:"ttime,omitempty"`
+		TGeos string  `form:"tgeos" json:"tgeos,omitempty"`
+		Lat   float64 `form:"lat" json:"lat,omitempty"`
+		Lng   float64 `form:"lng" json:"lng,omitempty"`
+	}
+
+	EventLoc struct {
+		Id        bson.ObjectId `form:"_id" bson:"_id,omitempty"`
+		Name      string        `form:"name" bson:"name,omitempty"`
+		Text      string        `form:"text" bson:"text,omitempty"`
+		Timestamp time.Time     `form:"timestamp" bson:"timestamp,omitempty"`
+		Location  GeoObject     `form:"location" bson:"location,omitempty"`
 	}
 )
 
@@ -220,10 +238,12 @@ func (point *GeoLocation) GetDistance(toPoint *GeoLocation) (distance float64) {
 // ========== user
 
 func (user *User) SetRnd() { // {{{
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	user.Id = bson.NewObjectId()
 	user.Name = "jhon " + RndStr(4)
 	user.Email = RndStr(6) + "@" + RndStr(4) + "." + RndStr(2)
-	user.Description = "descr: " + RndStr(10)
+	user.Text = "descr: " + RndStr(10)
+	user.Tags = []string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]
 } // }}}
 
 // ========== event
@@ -232,7 +252,8 @@ func (event *Event) SetRnd() { // {{{
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	event.Id = bson.NewObjectId()
 	event.Name = "event: " + string(event.Id)
-	event.Description = "descr: " + RndStr(10)
+	event.Text = "descr: " + RndStr(10)
+	event.Tags = []string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]
 	event.Timestamp = time.Now().Add(-time.Duration(rnd.Intn(100)) * time.Hour)
 	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
 } // }}}
@@ -240,7 +261,9 @@ func (event *Event) SetRnd() { // {{{
 // ========== groups
 
 func (group *Group) SetRnd() { // {{{
+	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	group.Id = bson.NewObjectId()
 	group.Name = "group: " + string(group.Id)
-	group.Description = "descr: " + RndStr(10)
+	group.Text = "descr: " + RndStr(10)
+	group.Tags = []string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]
 } // }}}

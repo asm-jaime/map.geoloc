@@ -127,7 +127,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== users
 	collection := session.DB(mongo.Database).C("dviUsers")
 	index := mgo.Index{
-		Key:        []string{"name", "email", "description", "events", "groups"},
+		Key:        []string{"name", "email", "text", "events", "groups"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
@@ -140,7 +140,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== events
 	collection = session.DB(mongo.Database).C("dviEvents")
 	index = mgo.Index{
-		Key:        []string{"name", "description", "users", "groups"},
+		Key:        []string{"name", "text", "users", "groups"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
@@ -161,7 +161,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== groups
 	collection = session.DB(mongo.Database).C("dviGroups")
 	index = mgo.Index{
-		Key:        []string{"name", "description", "users", "events"},
+		Key:        []string{"name", "text", "users", "events"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
@@ -588,6 +588,74 @@ func (mongo *MongoDB) PostGeoEvent(geoevent *ReqGeoEvent) (res RespondID, err er
 	err = session.DB(mongo.Database).C("dviLocations").Insert(&geoevent.GeoLoc)
 	err = session.DB(mongo.Database).C("dviEvent").Insert(&geoevent.Event)
 	return res, err
+} // }}}
+
+func (mongo *MongoDB) GetFilterEventLoc(filter *ReqELFilter) (locs []GeoLocation, err error) { // {{{
+	session := mongo.Session.Clone()
+	defer session.Close()
+
+	params := bson.M{}
+	if filter.Scope > 0 {
+		params["location"] = bson.M{
+			"$near": bson.M{
+				"$geometry": bson.M{
+					"type":        filter.TGeos,
+					"coordinates": []float64{filter.Lng, filter.Lat},
+				},
+				"$maxDistance": filter.Scope,
+			},
+		}
+	}
+
+	// User, Event, Group
+	params["tobject"] = "Event"
+
+	// Recently, Today, Yesterday, Week, Month
+	if filter.TTime != "" {
+		today := time.Now()
+		date_start := time.Time{}
+		date_end := today
+		switch filter.TTime {
+		case "Recently":
+			date_start = today.Add(-4 * time.Hour)
+			date_end = today
+		case "Today":
+			year, month, day := today.Date()
+			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+			date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
+		case "Yesterday":
+			today = today.Add(-24 * time.Hour)
+			year, month, day := today.Date()
+			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+			date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
+		case "Week":
+			year, month, day := today.Date()
+			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+			date_end = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+			for date_start.Weekday() != time.Monday {
+				date_start = date_start.AddDate(0, 0, -1)
+			}
+			for date_end.Weekday() != time.Sunday {
+				date_end = date_end.AddDate(0, 0, 1)
+			}
+			date_end = date_end.Add(24 * time.Hour)
+		case "Month":
+			year, month, _ := today.Date()
+			date_start = time.Date(year, month, 1, 0, 0, 0, 0, today.Location())
+			date_end = time.Date(year, month, 32, 0, 0, 0, 0, today.Location())
+			reg_month := date_end.Month()
+			for date_end.Month() == reg_month {
+				date_end = date_end.AddDate(0, 0, -1)
+			}
+			date_end = date_end.AddDate(0, 0, 1)
+		}
+		params["timestamp"] = bson.M{"$gt": date_start, "$lt": date_end}
+	}
+
+	fmt.Println(params)
+	err = session.DB(mongo.Database).C("dviLocations").Find(params).All(&locs)
+
+	return locs, err
 } // }}}
 
 // ========== geostate

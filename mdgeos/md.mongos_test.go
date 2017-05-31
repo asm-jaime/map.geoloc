@@ -166,7 +166,66 @@ func _TestFilterLoc(t *testing.T) { // {{{
 		req := ReqFilter{}
 		req.Scope = 5000000
 		req.TGeos = "Point"
-		req.TObject = "User"
+		req.TObject = "Event"
+		req.TTime = "Today"
+		//latitude in degrees is -90 and +90
+		req.Lat = (rand.Float64() * 180) - 90
+		//Longitude is in the range -180 and +180
+		req.Lng = (rand.Float64() * 360) - 180
+		//req.TTime
+		locs, err := tdb.GetFilterLoc(&req)
+		if err != nil {
+			t.Error("err in filled: ", err)
+		}
+	}
+} // }}}
+
+func TestGeoEvent(t *testing.T) { // {{{
+	tdb, err := dbTest()
+
+	if err != nil {
+		t.Error("err connect db in FillRnd: ", err)
+	}
+
+	// case post/get
+	{
+		loc := GeoLocation{}
+		loc.SetRnd()
+		event := Event{}
+		event.SetRnd()
+		geoevent := ReqGeoEvent{}
+		geoevent.Event = event
+		geoevent.GeoLoc = loc
+		id, err := tdb.PostGeoEvent(&geoevent)
+		if err != nil {
+			t.Error("err post geoevent: ", err)
+		}
+
+		loc.Id = id.Id
+		gloc, err := tdb.GetLoc(&loc)
+		if err != nil {
+			t.Error("err get: ", err)
+		}
+		assert.Equal(t, loc.Token, gloc.Token, "token does not match")
+	}
+} // }}}
+
+func _TestFilterLoc(t *testing.T) { // {{{
+	num := 500
+	tdb, err := dbTest()
+	if err != nil {
+		t.Error("err connect db in FillRnd: ", err)
+	}
+	err = tdb.FillRnd(num)
+	if err != nil {
+		t.Error("err Fill: ", err)
+	}
+	// case user today
+	{
+		req := ReqFilter{}
+		req.Scope = 5000000
+		req.TGeos = "Point"
+		req.TObject = "Event"
 		req.TTime = "Today"
 		//latitude in degrees is -90 and +90
 		req.Lat = (rand.Float64() * 180) - 90
@@ -199,33 +258,3 @@ func _TestFilterLoc(t *testing.T) { // {{{
 		fmt.Printf("\nlocs: %v\n", locs)
 	}
 } // }}}
-
-func TestGeoEvent(t *testing.T) {
-	tdb, err := dbTest()
-
-	if err != nil {
-		t.Error("err connect db in FillRnd: ", err)
-	}
-
-	// case post/get
-	{
-		loc := GeoLocation{}
-		loc.SetRnd()
-		event := Event{}
-		event.SetRnd()
-		geoevent := ReqGeoEvent{}
-		geoevent.Event = event
-		geoevent.GeoLoc = loc
-		id, err := tdb.PostGeoEvent(&geoevent)
-		if err != nil {
-			t.Error("err post geoevent: ", err)
-		}
-
-		loc.Id = id.Id
-		gloc, err := tdb.GetLoc(&loc)
-		if err != nil {
-			t.Error("err get: ", err)
-		}
-		assert.Equal(t, loc.Token, gloc.Token, "token does not match")
-	}
-}
