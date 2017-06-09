@@ -8,15 +8,16 @@ _obj
 _test
 backend/keys
 backend/z_buff
-frontend/public
+backend/public
+backend/dvij.geoloc
 
+frontend/public
 frontend/node_modules/
 frontend/public/*.js
 frontend/public/*.map
+frontend/dvij.geoloc
 
 # Build
-backend/dvij.geoloc
-frontend/dvij.geoloc
 
 # debug
 *.log
