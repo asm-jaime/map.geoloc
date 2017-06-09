@@ -1,0 +1,38 @@
+// points
+export const SET_POINTS = "SET_POINTS"
+export const PUT_POINT = "PUT_POINT"
+export const DEL_POINT = "DEL_POINT"
+
+// filter
+export const SET_FILTER = "SET_FILTER"
+// tags
+export const SET_TAGS = "SET_TAGS"
+
+export const CLEAN_POINTS = "CLEAN_POINTS"
+
+// new point
+export const PUT_NEW_POINT = "PUT_NEW_POINT"
+
+// my point
+export const PUT_MY_POINT = "PUT_MY_POINT"
+
+// filter
+// export const SET_FILTER = "SET_FILTER"
+
+export const CLEAR_CURRENT_EVENT_ERRORS = "CLEAR_CURRENT_EVENT_ERRORS"
+
+export const CHANGE_CURRENT_EVENT = "CHANGE_CURRENT_EVENT"
+
+export const GET_EVENTS_REQUEST = "GET_EVENTS_REQUEST"
+export const GET_EVENTS_SUCCESS = "GET_EVENTS_SUCCESS"
+
+export const GET_EVENT_REQUEST = "GET_EVENT_REQUEST"
+export const GET_EVENT_SUCCESS = "GET_EVENT_SUCCESS"
+
+export const CREATE_EVENT_REQUEST = "CREATE_EVENT_REQUEST"
+export const CREATE_EVENT_SUCCESS = "CREATE_EVENT_SUCCESS"
+export const CREATE_EVENT_FAILURE = "CREATE_EVENT_FAILURE"
+
+export const UPDATE_EVENT_REQUEST = "UPDATE_EVENT_REQUEST"
+export const UPDATE_EVENT_SUCCESS = "UPDATE_EVENT_SUCCESS"
+export const UPDATE_EVENT_FAILURE = "UPDATE_EVENT_FAILURE"
