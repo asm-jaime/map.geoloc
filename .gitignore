@@ -6,22 +6,23 @@
 # Folders
 _obj
 _test
-keys
-z_buff
-public
+backend/keys
+backend/z_buff
+frontend/public
 
-node_modules/
-public/*.js
-public/*.map
+frontend/node_modules/
+frontend/public/*.js
+frontend/public/*.map
 
 # Build
-dvij.geoloc
+backend/dvij.geoloc
+frontend/dvij.geoloc
 
 # debug
 *.log
 
 # IDE/vim/etc
-.tern-project
+frontend/.tern-project
 
 # Architecture specific extensions/prefixes
 *.[568vq]
