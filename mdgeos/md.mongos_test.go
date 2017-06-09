@@ -139,7 +139,7 @@ func _TestNearLoc(t *testing.T) { // {{{
 	}
 
 	req := ReqNear{}
-	req.Scope = 5000000
+	req.Scope = 3.14
 	req.TGeos = "Point"
 	//latitude in degrees is -90 and +90
 	req.Lat = (rand.Float64() * 180) - 90
@@ -164,10 +164,9 @@ func _TestFilterLoc(t *testing.T) { // {{{
 	// case user today
 	{
 		req := ReqFilter{}
-		req.Scope = 5000000
+		req.Scope = 3.14
 		req.TGeos = "Point"
 		req.TObject = "Event"
-		req.TTime = "Today"
 		//latitude in degrees is -90 and +90
 		req.Lat = (rand.Float64() * 180) - 90
 		//Longitude is in the range -180 and +180
@@ -177,10 +176,11 @@ func _TestFilterLoc(t *testing.T) { // {{{
 		if err != nil {
 			t.Error("err in filled: ", err)
 		}
+		fmt.Println(locs)
 	}
 } // }}}
 
-func TestGeoEvent(t *testing.T) { // {{{
+func _TestGeoEvent(t *testing.T) { // {{{
 	tdb, err := dbTest()
 
 	if err != nil {
@@ -210,7 +210,7 @@ func TestGeoEvent(t *testing.T) { // {{{
 	}
 } // }}}
 
-func _TestFilterLoc(t *testing.T) { // {{{
+func TestFilterEventLoc(t *testing.T) {
 	num := 500
 	tdb, err := dbTest()
 	if err != nil {
@@ -222,39 +222,26 @@ func _TestFilterLoc(t *testing.T) { // {{{
 	}
 	// case user today
 	{
-		req := ReqFilter{}
-		req.Scope = 5000000
-		req.TGeos = "Point"
-		req.TObject = "Event"
+		req := ReqELFilter{}
+		req.Scope = 3.1
+		//req.Tags = append(req.Tags, "whoredom")
+		//req.Tags = append(req.Tags, "debauch")
 		req.TTime = "Today"
 		//latitude in degrees is -90 and +90
-		req.Lat = (rand.Float64() * 180) - 90
+		//req.Lat = (rand.Float64() * 180) - 90
 		//Longitude is in the range -180 and +180
-		req.Lng = (rand.Float64() * 360) - 180
+		//req.Lng = (rand.Float64() * 360) - 180
+		req.Lat = 11
+		//Longitude is in the range -180 and +180
+		req.Lng = 8
 		//req.TTime
-		locs, err := tdb.GetFilterLoc(&req)
+		//fmt.Println(req)
+		elocs, err := tdb.GetFilterEventLoc(&req)
 		if err != nil {
-			t.Error("err in filled: ", err)
+			t.Error("err in ELFilter: ", err)
 		}
-		assert.Equal(t, time.Now().Day(), locs[0].Timestamp.Day(), "day does not match")
+		fmt.Println(elocs)
+		assert.Equal(t, time.Now().Day(), elocs[0].Timestamp.Day(), "day does not match")
 	}
 
-	// case user recently
-	{
-		req := ReqFilter{}
-		req.Scope = 5000000
-		req.TGeos = "Point"
-		req.TObject = ""
-		req.TTime = "Recently"
-		//latitude in degrees is -90 and +90
-		req.Lat = (rand.Float64() * 180) - 90
-		//Longitude is in the range -180 and +180
-		req.Lng = (rand.Float64() * 360) - 180
-		//req.TTime
-		locs, err := tdb.GetFilterLoc(&req)
-		if err != nil {
-			t.Error("err in filled: ", err)
-		}
-		fmt.Printf("\nlocs: %v\n", locs)
-	}
-} // }}}
+}

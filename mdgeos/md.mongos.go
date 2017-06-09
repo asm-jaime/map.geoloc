@@ -203,14 +203,17 @@ func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
 	user := User{}
 	point := GeoLocation{}
 
+	lim := 2
 	for i := 0; i < num; i++ {
 		user.SetRnd()
 		point.SetRnd()
 		userRef.Id = user.Id
 		point.Id = user.Id
 		point.TObject = "User"
-		userRef.Collection = "dviUsers"
-		*userRefs = append(*userRefs, *userRef)
+		if i < lim {
+			userRef.Collection = "dviUsers"
+			*userRefs = append(*userRefs, *userRef)
+		}
 		err = session.DB(mongo.Database).C("dviUsers").Insert(&user)
 		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 		if err != nil {
@@ -527,49 +530,6 @@ func (mongo *MongoDB) GetFilterLoc(filter *ReqFilter) (locs []GeoLocation, err e
 		params["tobject"] = filter.TObject
 	}
 
-	// Recently, Today, Yesterday, Week, Month
-	if filter.TTime != "" {
-		today := time.Now()
-		date_start := time.Time{}
-		date_end := today
-		switch filter.TTime {
-		case "Recently":
-			date_start = today.Add(-4 * time.Hour)
-			date_end = today
-		case "Today":
-			year, month, day := today.Date()
-			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
-		case "Yesterday":
-			today = today.Add(-24 * time.Hour)
-			year, month, day := today.Date()
-			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
-		case "Week":
-			year, month, day := today.Date()
-			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			for date_start.Weekday() != time.Monday {
-				date_start = date_start.AddDate(0, 0, -1)
-			}
-			for date_end.Weekday() != time.Sunday {
-				date_end = date_end.AddDate(0, 0, 1)
-			}
-			date_end = date_end.Add(24 * time.Hour)
-		case "Month":
-			year, month, _ := today.Date()
-			date_start = time.Date(year, month, 1, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, 32, 0, 0, 0, 0, today.Location())
-			reg_month := date_end.Month()
-			for date_end.Month() == reg_month {
-				date_end = date_end.AddDate(0, 0, -1)
-			}
-			date_end = date_end.AddDate(0, 0, 1)
-		}
-		params["timestamp"] = bson.M{"$gt": date_start, "$lt": date_end}
-	}
-
-	fmt.Println(params)
 	err = session.DB(mongo.Database).C("dviLocations").Find(params).All(&locs)
 
 	return locs, err
@@ -590,32 +550,55 @@ func (mongo *MongoDB) PostGeoEvent(geoevent *ReqGeoEvent) (res RespondID, err er
 	return res, err
 } // }}}
 
-func (mongo *MongoDB) GetFilterEventLoc(filter *ReqELFilter) (locs []GeoLocation, err error) { // {{{
+func (mongo *MongoDB) GetFilterEventLoc(filter *ReqELFilter) (elocs []EventLoc, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	params := bson.M{}
-	if filter.Scope > 0 {
-		params["location"] = bson.M{
-			"$near": bson.M{
-				"$geometry": bson.M{
-					"type":        filter.TGeos,
-					"coordinates": []float64{filter.Lng, filter.Lat},
-				},
-				"$maxDistance": filter.Scope,
-			},
-		}
+	params := []bson.M{}
+
+	if filter.Scope <= 0 {
+		return elocs, err
 	}
 
-	// User, Event, Group
-	params["tobject"] = "Event"
+	params = append(params, bson.M{
+		"$geoNear": bson.M{
+			"spherical":     true,
+			"near":          []float64{filter.Lng, filter.Lat},
+			"distanceField": "distance",
+			"includeLocs":   "location",
+			"maxDistance":   filter.Scope,
+		},
+	})
 
+	params = append(params, bson.M{
+		"$lookup": bson.M{
+			"from":         "dviEvents",
+			"localField":   "_id",
+			"foreignField": "_id",
+			"as":           "Events",
+		},
+	})
+
+	params = append(params, bson.M{
+		"$unwind": bson.M{
+			"path": "$Events",
+			"preserveNullAndEmptyArrays": true,
+		},
+	})
+
+	if len(filter.Tags) > 0 {
+		params = append(params, bson.M{
+			"$match": bson.M{
+				"Events.tags": bson.M{"$in": filter.Tags},
+			},
+		})
+	}
 	// Recently, Today, Yesterday, Week, Month
 	if filter.TTime != "" {
 		today := time.Now()
 		date_start := time.Time{}
 		date_end := today
-		switch filter.TTime {
+		switch filter.TTime { // {{{
 		case "Recently":
 			date_start = today.Add(-4 * time.Hour)
 			date_end = today
@@ -648,15 +631,30 @@ func (mongo *MongoDB) GetFilterEventLoc(filter *ReqELFilter) (locs []GeoLocation
 				date_end = date_end.AddDate(0, 0, -1)
 			}
 			date_end = date_end.AddDate(0, 0, 1)
-		}
-		params["timestamp"] = bson.M{"$gt": date_start, "$lt": date_end}
+		} // }}}
+		params = append(params, bson.M{
+			"$match": bson.M{
+				"Events.timestamp": bson.M{"$gt": date_start, "$lt": date_end},
+			},
+		})
 	}
 
-	fmt.Println(params)
-	err = session.DB(mongo.Database).C("dviLocations").Find(params).All(&locs)
+	params = append(params, bson.M{
+		"$project": bson.M{
+			"_id":       1,
+			"name":      "$Events.name",
+			"tags":      "$Events.tags",
+			"text":      "$Events.text",
+			"timestamp": "$Events.timestamp",
+			"location":  1,
+		},
+	})
 
-	return locs, err
-} // }}}
+	//fmt.Println(params)
+	err = session.DB(mongo.Database).C("dviLocations").Pipe(params).All(&elocs)
+
+	return elocs, err
+}
 
 // ========== geostate
 
