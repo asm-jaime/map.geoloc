@@ -10,8 +10,18 @@ keys
 z_buff
 public
 
+node_modules/
+public/*.js
+public/*.map
+
 # Build
 dvij.geoloc
+
+# debug
+*.log
+
+# IDE/vim/etc
+.tern-project
 
 # Architecture specific extensions/prefixes
 *.[568vq]
