@@ -1,0 +1,4 @@
+---
+- include: install.yml
+- include: mkstruct_dir.yml
+- include: insert_gopath.yml

@@ -1,0 +1,5 @@
+---
+- hosts: localhost
+  roles:
+    - role: deploy.front
+    - role: deploy.geoloc

@@ -1,0 +1,4 @@
+---
+- include: pull.submodules.yml
+- include: deploy.yml
+- include: load.to.destination.yml

@@ -1,0 +1,2 @@
+- name: git pull dvij.front
+  command: bash -lc "cd ../dvij.front && git pull"

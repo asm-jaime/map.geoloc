@@ -1,0 +1,16 @@
+- name: mgo container
+  docker:
+    name: mongo_flagship
+    image: mongo
+    state: absent
+
+- name: mgo container
+  docker:
+    name: mongo_flagship
+    image: mongo
+    state: reloaded
+    pull: always
+    volumes:
+    - "/data/db:/data/db"
+    ports:
+    - "27017:27017"

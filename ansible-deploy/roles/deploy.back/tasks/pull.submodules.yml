@@ -1,0 +1,2 @@
+- name: git pull dvij.geoloc
+  command: bash -lc "cd ../dvij.geoloc && git pull"

@@ -1,0 +1,4 @@
+- name: creates dir
+  file:
+    path: ~/go/src
+    state: directory
