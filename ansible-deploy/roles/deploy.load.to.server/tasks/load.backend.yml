@@ -1,0 +1,7 @@
+- name: Copy backend to geoloc (from localhost to flagship)
+  copy: src=../backend/backend dest=/geoloc
+  delegate_to: flagship
+
+- name: Copy keys to geoloc (from localhost to flagship)
+  copy: src=../backend/keys dest=/geoloc
+  delegate_to: flagship

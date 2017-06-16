@@ -1,7 +1,0 @@
-- name: Copy backend dvij.geoloc (from localhost to flagship)
-  copy: src=../dvij.geoloc/dvij.geoloc dest=/dvij
-  delegate_to: flagship
-
-- name: Copy keys (from localhost to flagship)
-  copy: src=../dvij.geoloc/keys dest=/dvij
-  delegate_to: flagship
