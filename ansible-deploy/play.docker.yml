@@ -1,0 +1,6 @@
+---
+- hosts: flagship
+  roles:
+  # - role: golang
+  # - role: docker
+  - role: mongodb
