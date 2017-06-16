@@ -1,7 +1,0 @@
-- name: insert/update conf configuration
-  blockinfile:
-    dest: ~/.bashrc
-    block: |
-      export GOPATH=$HOME/go
-      export PATH=$PATH:$GOPATH/bin
-      export GOBIN=$GOPATH/bin

@@ -1,2 +1,0 @@
-- name: Install go
-  apt: pkg=golang-go state=present
