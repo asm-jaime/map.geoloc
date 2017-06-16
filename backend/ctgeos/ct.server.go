@@ -7,8 +7,8 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"dvij.geoloc/conf"
-	md "dvij.geoloc/mdgeos"
+	"map.geoloc/backend/conf"
+	md "map.geoloc/backend/mdgeos"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"

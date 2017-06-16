@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"dvij.geoloc/conf"
+	"map.geoloc/backend/conf"
 
 	"github.com/gin-gonic/gin"
 )

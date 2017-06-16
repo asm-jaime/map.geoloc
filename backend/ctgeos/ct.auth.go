@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	md "dvij.geoloc/mdgeos"
+	md "map.geoloc/backend/mdgeos"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"

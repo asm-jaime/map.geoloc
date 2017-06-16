@@ -11,8 +11,8 @@ import (
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
-	"dvij.geoloc/conf"
-	md "dvij.geoloc/mdgeos"
+	"map.geoloc/backend/conf"
+	md "map.geoloc/backend/mdgeos"
 )
 
 func dbTest() (vars *Vars, mg *md.MongoDB, coauth *oauth2.Config, err error) { // {{{

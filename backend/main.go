@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	ct "dvij.geoloc/ctgeos"
+	ct "map.geoloc/backend/ctgeos"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func incorrectCommand() {
 	fmt.Println("---------------")
 	fmt.Println("ERROR")
 	fmt.Println("Incorrect command")
-	fmt.Println("For help run \"./dvij.geoloc help\"")
+	fmt.Println("For help run \"./backend help\"")
 	fmt.Println("---------------")
 }
 
