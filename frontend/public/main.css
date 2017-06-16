@@ -1,0 +1,17 @@
+.show-blinking {
+  background: #F00;
+  transition-property: background;
+  transition-duration: 0.6s;
+}
+
+.panel-point {
+  max-width: 400px;
+  /* max-height: 500px; */
+  top: 140px;
+  right: 1%;
+  position: absolute;
+  float: right;
+  z-index: 2;
+  background: #292b2c;
+  padding: 20px;
+}

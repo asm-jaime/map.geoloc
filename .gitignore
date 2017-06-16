@@ -9,13 +9,12 @@ _test
 backend/keys
 backend/z_buff
 backend/public
-backend/dvij.geoloc
+backend/backend
 
-frontend/public
 frontend/node_modules/
 frontend/public/*.js
 frontend/public/*.map
-frontend/dvij.geoloc
+frontend/backend
 
 # Build
 
