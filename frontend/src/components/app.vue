@@ -10,14 +10,8 @@
             </div>
             <div class="col">
             <b-nav isNavBar>
-              <router-link to="/event">
-                <b-nav-item>custom</b-nav-item>
-              </router-link>
               <router-link to="/">
-                <b-nav-item>dvij</b-nav-item>
-              </router-link>
-              <router-link to="/users">
-                <b-nav-item>users</b-nav-item>
+                <b-nav-item>home</b-nav-item>
               </router-link>
               <router-link to="/events">
                 <b-nav-item>events</b-nav-item>

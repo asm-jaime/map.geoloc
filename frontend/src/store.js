@@ -9,8 +9,6 @@ import * as gen from './api/api.gens.js';
 
 import * as api_point from './api/api.points.js';
 
-import events from './store/modules/events';
-
 Vue.use(Vuex);
 
 const state = {
@@ -182,9 +180,6 @@ const getters = {
 export default new Vuex.Store({
   state,
   getters,
-  modules: {
-    events
-  },
   actions,
   mutations
 })
