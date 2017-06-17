@@ -7,11 +7,11 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"map.geoloc/backend/conf"
-	md "map.geoloc/backend/mdgeos"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
+	"map.geoloc/backend/conf"
+	md "map.geoloc/backend/mdgeos"
 )
 
 // ========== global vars, what should be set to context
@@ -148,7 +148,7 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config, config *conf
 				point.GET("/all", GetLocs)
 				point.GET("/rnd", GetRndLoc)
 				point.GET("/near", GetNearLoc)
-				point.GET("/filter", GetFilterLoc)
+				point.GET("/filter", GetFilterEventLoc)
 				point.POST("/state", PostLocToGeoState)
 			}
 			auth := v1.Group("auth")

@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	// "map.geoloc/backend/conf"
-	md "map.geoloc/backend/mdgeos"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
+	md "map.geoloc/backend/mdgeos"
 )
 
 // ========== user
@@ -587,3 +587,27 @@ func GetFilterLoc(c *gin.Context) { // {{{
 		c.JSON(http.StatusOK, gin.H{"msg": "get filtered points complete", "body": locs})
 	}
 } // }}}
+
+func GetFilterEventLoc(c *gin.Context) {
+	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+	}
+
+	var req md.ReqELFilter
+	err := c.Bind(&req)
+	fmt.Println(req)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		return
+	}
+
+	elocs, err := mongo.GetFilterEventLoc(&req)
+	fmt.Println(elocs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+	} else {
+		c.JSON(http.StatusOK, gin.H{"msg": "get filtered event-loc complete", "body": elocs})
+	}
+}

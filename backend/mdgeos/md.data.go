@@ -135,6 +135,7 @@ type (
 		Id        bson.ObjectId `form:"_id" bson:"_id,omitempty"`
 		Name      string        `form:"name" bson:"name,omitempty"`
 		Text      string        `form:"text" bson:"text,omitempty"`
+		Tags      []string      `form:"tags" bson:"tags,omitempty"`
 		Timestamp time.Time     `form:"timestamp" bson:"timestamp,omitempty"`
 		Location  GeoObject     `form:"location" bson:"location,omitempty"`
 	}
