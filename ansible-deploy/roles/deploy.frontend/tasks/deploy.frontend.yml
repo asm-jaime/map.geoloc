@@ -1,0 +1,5 @@
+- name: Install packages frontend
+  npm:
+    path: ../frontend
+- name: deploy frontend
+  command: bash -lc "cd ../frontend && npm run build"

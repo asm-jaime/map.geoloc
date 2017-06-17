@@ -1,3 +1,0 @@
-- name: creates dir for front
-  file: path=/dvij state=directory
-  delegate_to: flagship

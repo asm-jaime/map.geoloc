@@ -15,7 +15,7 @@ gulp.task('clean:build', function() {
 
 gulp.task('copy:dev', function() {
   return gulp.src('./public/**/*')
-    .pipe(gulp.dest('./../dvij.geoloc/public'));
+    .pipe(gulp.dest('./../backend/public'));
 });
 
 gulp.task('build', ['clean:build'], function() {
@@ -25,7 +25,7 @@ gulp.task('build', ['clean:build'], function() {
       this.emit('end'); // Recover from errors
     })
     .pipe(gulp.dest('./'))
-    .pipe(gulp.dest('./../dvij.geoloc')) // copy to geoloc repository
+    .pipe(gulp.dest('./../backend')) // copy to geoloc repository
     .pipe(livereload());
 });
 
@@ -36,7 +36,7 @@ gulp.task('watch:build', function() {
 
 // start backend
 gulp.task('server:gin', function(done) {
-  exec('./dvij.geoloc start std', function (err, stdout, stderr) {
+  exec('./backend start std', function (err, stdout, stderr) {
     console.log(stdout);
     console.log(stderr);
     done(err);
@@ -47,4 +47,5 @@ gulp.task('server:gin', function(done) {
 // Main tasks
 gulp.task('server', ['server:gin']);
 gulp.task('watch', ['build', 'watch:build']);
+//gulp.task('build', ['build']);
 gulp.task('default', ['watch','server']);

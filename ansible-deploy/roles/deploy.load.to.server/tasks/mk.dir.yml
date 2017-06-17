@@ -1,0 +1,3 @@
+- name: creates dir for project
+  file: path=/geoloc state=directory
+  delegate_to: flagship

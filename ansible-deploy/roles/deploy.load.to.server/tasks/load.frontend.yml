@@ -1,0 +1,3 @@
+- name: Copy frontend/public (from localhost to flagship)
+  copy: src=../frontend/public dest=/geoloc
+  delegate_to: flagship

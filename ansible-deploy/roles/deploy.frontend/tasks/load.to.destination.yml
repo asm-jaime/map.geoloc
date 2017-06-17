@@ -1,3 +1,0 @@
-- name: Copy dvij.front/public (from localhost to flagship)
-  copy: src=../dvij.front/public dest=/dvij
-  delegate_to: flagship

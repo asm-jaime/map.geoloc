@@ -1,5 +1,0 @@
-- name: Install packages dvij.front
-  npm:
-    path: ../dvij.front
-- name: deploy front
-  command: bash -lc "cd ../dvij.front && npm run build"
