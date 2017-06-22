@@ -1,21 +1,11 @@
-### backend for dvij
+### backend
 
-#### how to start
+#### install
 
   * `go get`
   * `go get -v ./...`
+  
+#### start  
+  
   * `go run main.go start std`
   * `http://localhost:8080`
-
-# Vue 2.0 dvij.front
-
-## Build Setup
-
-#### install dependencies
-`npm install`
-
-#### start on localhost:8081
-`npm run start`
-
-#### build production
-`npm run build`
