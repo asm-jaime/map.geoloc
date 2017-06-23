@@ -1,3 +1,7 @@
-# ansible scripts for auto deploy project
+# ansible scripts
 
-### how to do
+  Install Ansible and do autodeploy
+
+### deploy steps
+  * `ansible-playbook play.deploy.frontend.yml`
+  * `ansible-playbook play.deploy.backend.yml`
