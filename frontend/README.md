@@ -1,12 +1,10 @@
-# Vue 2.0 dvij.front
+# frontend
 
-## Build Setup
-
-#### install dependencies
+#### install
 `npm install`
 
-#### start on localhost:8081
-`npm run start`
+#### start 
+`npm run start` localhost:8081
 
-#### build production
+#### build
 `npm run build`
