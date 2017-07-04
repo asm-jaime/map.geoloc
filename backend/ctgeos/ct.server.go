@@ -126,15 +126,6 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config, config *conf
 
 				event.GET("/all", GetEvents)
 			}
-			group := v1.Group("groups")
-			{
-				group.GET("", GetGroup)
-				group.POST("", PostGroup)
-				group.PUT("", PutGroup)
-				group.DELETE("", DelGroup)
-
-				group.GET("/all", GetGroups)
-			}
 			point := v1.Group("points")
 			point.Use(MiddleVars(vars))
 			{

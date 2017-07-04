@@ -32,7 +32,6 @@ type (
 		Tags   []string      `form:"tags" bson:"tags"`
 		Email  string        `form:"email" binding:"required" bson:"email"`
 		Events []mgo.DBRef   `form:"events" bson:"events,omitempty"`
-		Groups []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
 	}
 )
 
@@ -49,34 +48,15 @@ type (
 		Tags      []string      `form:"tags" bson:"tags"`
 		TTLEvent  time.Time     `form:"ttl" bson:"ttl,omitempty"`
 		Users     []mgo.DBRef   `form:"users" bson:"users,omitempty"`
-		Groups    []mgo.DBRef   `form:"groups" bson:"groups,omitempty"`
 		Timestamp time.Time     `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
 	}
 )
 
 // }}}
 
-// ========== Groups {{{
-
-type (
-	Group struct {
-		Id     bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Name   string        `form:"name" bson:"name,omitempty"`
-		Text   string        `form:"text" bson:"text,omitempty"`
-		Tags   []string      `form:"tags" bson:"tags,omitempty"`
-		Users  []mgo.DBRef   `form:"users" bson:"users,omitempty"`
-		Events []mgo.DBRef   `form:"events" bson:"events,omitempty"`
-	}
-
-	Groups    []Group
-	GroupRefs []mgo.DBRef
-)
-
-// }}}
-
 // ========== locs
 
-// id GeoLocation should be id user/event/group
+// id GeoLocation should be id user/event
 type (
 	GeoObject struct {
 		Type        string     `json:"type,omitempty"`
@@ -220,7 +200,7 @@ func (point *GeoLocation) SetRnd() { // {{{
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	point.Id = bson.NewObjectId()
 	point.Token = RndStr(8)
-	point.TObject = []string{"User", "Event", "Group"}[rnd.Intn(3)]
+	point.TObject = []string{"User", "Event"}[rnd.Intn(2)]
 
 	point.Location.Type = []string{"Point"}[0]
 	//latitude in degrees is -90 and +90
@@ -257,14 +237,4 @@ func (event *Event) SetRnd() { // {{{
 	event.Tags = []string{[]string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]}
 	event.Timestamp = time.Now().Add(-time.Duration(rnd.Intn(100)) * time.Hour)
 	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
-} // }}}
-
-// ========== groups
-
-func (group *Group) SetRnd() { // {{{
-	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-	group.Id = bson.NewObjectId()
-	group.Name = "group: " + string(group.Id)
-	group.Text = "descr: " + RndStr(10)
-	group.Tags = []string{[]string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]}
 } // }}}

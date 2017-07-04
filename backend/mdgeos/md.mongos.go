@@ -94,12 +94,8 @@ func (mongo *MongoDB) UpsertDefaultUser() (err error) { // {{{
 func (mongo *MongoDB) Drop() (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
-
 	err = session.DB(mongo.Database).DropDatabase()
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 } // }}}
 
 func (mongo *MongoDB) Init() (err error) { // {{{
@@ -127,7 +123,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== users
 	collection := session.DB(mongo.Database).C("dviUsers")
 	index := mgo.Index{
-		Key:        []string{"name", "email", "text", "events", "groups"},
+		Key:        []string{"name", "email", "text", "events"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
@@ -140,7 +136,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== events
 	collection = session.DB(mongo.Database).C("dviEvents")
 	index = mgo.Index{
-		Key:        []string{"name", "text", "users", "groups"},
+		Key:        []string{"name", "text", "users"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
@@ -152,19 +148,6 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	index = mgo.Index{
 		Key:         []string{"ttl"},
 		ExpireAfter: time.Duration(1) * time.Second,
-	}
-	err = collection.EnsureIndex(index)
-	if err != nil {
-		return err
-	}
-
-	// ========== groups
-	collection = session.DB(mongo.Database).C("dviGroups")
-	index = mgo.Index{
-		Key:        []string{"name", "text", "users", "events"},
-		Unique:     false,
-		Background: true,
-		Sparse:     true,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
@@ -355,67 +338,6 @@ func (mongo *MongoDB) DelEvent(event *Event) (err error) { // {{{
 	return err
 } // }}}
 
-// ========== group
-
-func (mongo *MongoDB) GetGroups() (groups []Group, err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	err = session.DB(mongo.Database).C("dviGroups").Find(bson.M{}).All(&groups)
-	return groups, err
-} // }}}
-
-func (mongo *MongoDB) GetGroup(group *Group) (ggroup Group, err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	if group.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviGroups").Find(bson.M{"_id": group.Id}).One(&ggroup)
-		return ggroup, err
-	}
-	return ggroup, err
-} // }}}
-
-func (mongo *MongoDB) PostGroups(groups *[]Group) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	for _, group := range *groups {
-		group.Id = bson.NewObjectId()
-		err = session.DB(mongo.Database).C("dviGroups").Insert(&group)
-	}
-	return err
-} // }}}
-
-func (mongo *MongoDB) PostGroup(group *Group) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	group.Id = bson.NewObjectId()
-	err = session.DB(mongo.Database).C("dviGroups").Insert(&group)
-	return err
-} // }}}
-
-func (mongo *MongoDB) UpdateGroup(group *Group) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	err = session.DB(mongo.Database).C("dviLocations").Update(
-		bson.M{"_id": group.Id}, &group)
-	return err
-} // }}}
-
-func (mongo *MongoDB) DelGroup(group *Group) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	if group.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviGroups").RemoveId(group.Id)
-		return err
-	}
-	return err
-} // }}}
-
 // ========== point
 
 func (mongo *MongoDB) GetLocs() (locs []GeoLocation, err error) { // {{{
@@ -525,7 +447,7 @@ func (mongo *MongoDB) GetFilterLoc(filter *ReqFilter) (locs []GeoLocation, err e
 		}
 	}
 
-	// User, Event, Group
+	// User, Event
 	if filter.TObject != "" {
 		params["tobject"] = filter.TObject
 	}
