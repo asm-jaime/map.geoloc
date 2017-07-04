@@ -430,33 +430,6 @@ func (mongo *MongoDB) GetNearLoc(near *ReqNear) (locs []GeoLocation, err error) 
 	return locs, err
 } // }}}
 
-func (mongo *MongoDB) GetFilterLoc(filter *ReqFilter) (locs []GeoLocation, err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	params := bson.M{}
-	if filter.Scope > 0 {
-		params["location"] = bson.M{
-			"$near": bson.M{
-				"$geometry": bson.M{
-					"type":        filter.TGeos,
-					"coordinates": []float64{filter.Lng, filter.Lat},
-				},
-				"$maxDistance": filter.Scope,
-			},
-		}
-	}
-
-	// User, Event
-	if filter.TObject != "" {
-		params["tobject"] = filter.TObject
-	}
-
-	err = session.DB(mongo.Database).C("dviLocations").Find(params).All(&locs)
-
-	return locs, err
-} // }}}
-
 // ========== geoloc+event
 
 func (mongo *MongoDB) PostGeoEvent(geoevent *ReqGeoEvent) (res RespondID, err error) { // {{{
