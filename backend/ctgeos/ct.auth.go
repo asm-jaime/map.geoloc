@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"strings"
 
-	md "map.geoloc/backend/mdgeos"
+	gen "github.com/asm-jaime/gen"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
+	md "map.geoloc/backend/mdgeos"
 )
 
 // AuthHandler handles authentication of a user and initiates a session {{{
@@ -81,7 +82,7 @@ func AuthHandler(c *gin.Context) {
 func LoginHandler(c *gin.Context) {
 	cauth, _ := c.Keys["oauth"].(*oauth2.Config)
 	// set state session for auth user.Email <=> state
-	state := md.RandToken(32)
+	state := gen.TokenB64(32)
 	session := sessions.Default(c)
 	session.Set("state", state)
 	session.Save()

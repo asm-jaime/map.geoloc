@@ -7,6 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 
+	gen "github.com/asm-jaime/gen"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
@@ -87,7 +88,7 @@ func MiddleNoRoute(c *gin.Context) { // {{{
 func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config, config *conf.ServerConfig) *gin.Engine {
 	router := gin.Default()
 	// support sessions
-	store := sessions.NewCookieStore([]byte(md.RandToken(64)))
+	store := sessions.NewCookieStore([]byte(gen.TokenB64(64)))
 	store.Options(sessions.Options{
 		Path:   "/",
 		MaxAge: 86400 * 7,

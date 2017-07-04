@@ -1,13 +1,13 @@
 package mdgeos
 
 import (
-	"encoding/base64"
 	"fmt"
 	"math"
 	rand "math/rand"
 	"sync"
 	"time"
 
+	gen "github.com/asm-jaime/gen"
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -121,25 +121,6 @@ type (
 	}
 )
 
-// ========== random {{{
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func RndStr(n int) string {
-	rnd_str := make([]rune, n)
-	for i := range rnd_str {
-		rnd_str[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(rnd_str)
-}
-
-// RandToken generates a random @length token.
-func RandToken(length int) string {
-	tbyte := make([]byte, length)
-	rand.Read(tbyte)
-	return base64.StdEncoding.EncodeToString(tbyte)
-} // }}}
-
 // ========== GeoState methods
 
 // NewGeoState will return a new state {{{
@@ -199,7 +180,7 @@ func (geost *GeoState) GetLoc(id bson.ObjectId) (point GeoLocation, ok bool) {
 func (point *GeoLocation) SetRnd() { // {{{
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	point.Id = bson.NewObjectId()
-	point.Token = RndStr(8)
+	point.Token = gen.Str(8)
 	point.TObject = []string{"User", "Event"}[rnd.Intn(2)]
 
 	point.Location.Type = []string{"Point"}[0]
@@ -221,9 +202,9 @@ func (point *GeoLocation) GetDistance(toPoint *GeoLocation) (distance float64) {
 func (user *User) SetRnd() { // {{{
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	user.Id = bson.NewObjectId()
-	user.Name = "jhon " + RndStr(4)
-	user.Email = RndStr(6) + "@" + RndStr(4) + "." + RndStr(2)
-	user.Text = "descr: " + RndStr(10)
+	user.Name = "jhon " + gen.Str(4)
+	user.Email = gen.Str(6) + "@" + gen.Str(4) + "." + gen.Str(2)
+	user.Text = "descr: " + gen.Str(10)
 	user.Tags = []string{[]string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]}
 } // }}}
 
@@ -233,7 +214,7 @@ func (event *Event) SetRnd() { // {{{
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	event.Id = bson.NewObjectId()
 	event.Name = "event: " + string(event.Id)
-	event.Text = "descr: " + RndStr(10)
+	event.Text = "descr: " + gen.Str(10)
 	event.Tags = []string{[]string{"whoredom", "debauch", "drugs"}[rnd.Intn(3)]}
 	event.Timestamp = time.Now().Add(-time.Duration(rnd.Intn(100)) * time.Hour)
 	// event.TTLEvent = time.Now().Add(time.Duration(60) * time.Second)
