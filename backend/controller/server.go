@@ -1,4 +1,4 @@
-package ctgeos
+package controller
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/contrib/static"
 	"github.com/gin-gonic/gin"
 	"map.geoloc/backend/conf"
-	md "map.geoloc/backend/mdgeos"
+	md "map.geoloc/backend/model"
 )
 
 // ========== global vars, what should be set to context

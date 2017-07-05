@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	ct "map.geoloc/backend/ctgeos"
+	ct "map.geoloc/backend/controller"
 )
 
 func main() {

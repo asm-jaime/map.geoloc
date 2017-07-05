@@ -1,4 +1,4 @@
-package mdgeos
+package model
 
 import (
 	"errors"

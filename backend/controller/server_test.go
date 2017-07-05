@@ -1,4 +1,4 @@
-package ctgeos
+package controller
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"golang.org/x/oauth2/google"
 
 	"map.geoloc/backend/conf"
-	md "map.geoloc/backend/mdgeos"
+	md "map.geoloc/backend/model"
 )
 
 func dbTest() (vars *Vars, mg *md.MongoDB, coauth *oauth2.Config, err error) { // {{{

@@ -1,4 +1,4 @@
-package ctgeos
+package controller
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
-	md "map.geoloc/backend/mdgeos"
+	md "map.geoloc/backend/model"
 )
 
 // AuthHandler handles authentication of a user and initiates a session {{{

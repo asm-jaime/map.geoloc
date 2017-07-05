@@ -1,4 +1,4 @@
-package ctgeos
+package controller
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	// "map.geoloc/backend/conf"
 	"github.com/gin-gonic/contrib/sessions"
 	"github.com/gin-gonic/gin"
-	md "map.geoloc/backend/mdgeos"
+	md "map.geoloc/backend/model"
 )
 
 // ========== user
