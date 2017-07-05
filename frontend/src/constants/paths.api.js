@@ -11,8 +11,6 @@ export const POINTS = {
   FILTER: `${API_URL}/api/v1/points/filter`,
 }
 
-const GROUPS = {}
-
 const env_const = { //{{{
     STATUS_OK: 200,
     CONFIG_GET: {
