@@ -15,53 +15,63 @@ import (
 func GetUsers(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	req, err := mongo.GetUsers()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": req})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get points complete", "body": req})
 	}
 } // }}}
 
 func GetUser(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	var req md.User
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	req, err = mongo.GetUser(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get user complete", "body": req})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get user complete", "body": req})
 	}
 } // }}}
 
 func PostUser(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.User
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	err = mongo.PostUser(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -71,25 +81,29 @@ func PostUser(c *gin.Context) { // {{{
 func PutUser(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.User
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	if req.Id.Hex() != "" {
 		err = mongo.UpdateUser(&req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"msg": err.Error(), "body": nil})
 			return
 		}
 	} else {
 		err = mongo.PostUser(&req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"msg": err.Error(), "body": nil})
 			return
 		}
 	}
@@ -100,18 +114,21 @@ func PutUser(c *gin.Context) { // {{{
 func DelUser(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.User
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	err = mongo.DelUser(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -123,106 +140,126 @@ func DelUser(c *gin.Context) { // {{{
 func GetEvents(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	req, err := mongo.GetEvents()
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "events not found", "body": nil})
+		c.JSON(http.StatusNotFound,
+			gin.H{"msg": "events not found", "body": nil})
 	}
-	c.JSON(http.StatusOK, gin.H{"msg": "get events successful complete", "body": req})
+	c.JSON(http.StatusOK,
+		gin.H{"msg": "get events successful complete", "body": req})
 } // }}}
 
 func GetEvent(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	var req md.Event
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	req, err = mongo.GetEvent(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get event complete", "body": req})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get event complete", "body": req})
 	}
 } // }}}
 
 func PostEvent(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	var req md.Event
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	err = mongo.PostEvent(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"msg": "post event complete", "body": req})
+	c.JSON(http.StatusOK,
+		gin.H{"msg": "post event complete", "body": req})
 } // }}}
 
 func PutEvent(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.Event
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	if req.Id.Hex() != "" {
 		err = mongo.UpdateEvent(&req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"msg": err.Error(), "body": nil})
 			return
 		}
 	} else {
 		err = mongo.PostEvent(&req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"msg": err.Error(), "body": nil})
 			return
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"msg": "put event complete", "body": req})
+	c.JSON(http.StatusOK,
+		gin.H{"msg": "put event complete", "body": req})
 } // }}}
 
 func DelEvent(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.Event
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	err = mongo.DelEvent(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"msg": "del event complete", "body": req})
+	c.JSON(http.StatusOK,
+		gin.H{"msg": "del event complete", "body": req})
 } // }}}
 
 // ========== locations
@@ -230,42 +267,50 @@ func DelEvent(c *gin.Context) { // {{{
 func GetLocs(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	req, err := mongo.GetLocs()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": req})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get points complete", "body": req})
 	}
 } // }}}
 
 func GetLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	req, err = mongo.GetLoc(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": req})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get points complete", "body": req})
 	}
 } // }}}
 
 func PostLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.GeoLocation
 	err := c.Bind(&req)
@@ -277,7 +322,8 @@ func PostLoc(c *gin.Context) { // {{{
 	fmt.Println(req)
 	point, err := mongo.PostLoc(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -287,12 +333,14 @@ func PostLoc(c *gin.Context) { // {{{
 func PutLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -301,14 +349,16 @@ func PutLoc(c *gin.Context) { // {{{
 		if err != nil {
 			point, err := mongo.PostLoc(&req)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": point})
+				c.JSON(http.StatusInternalServerError,
+					gin.H{"msg": err.Error(), "body": point})
 				return
 			}
 		}
 	} else {
 		_, err := mongo.PostLoc(&req)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+			c.JSON(http.StatusInternalServerError,
+				gin.H{"msg": err.Error(), "body": nil})
 			return
 		}
 	}
@@ -319,18 +369,21 @@ func PutLoc(c *gin.Context) { // {{{
 func DelLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	err = mongo.DelLoc(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -340,7 +393,8 @@ func DelLoc(c *gin.Context) { // {{{
 func PostLocToGeoState(c *gin.Context) { // {{{
 	vars, ok := c.Keys["vars"].(*Vars)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't get vars from context", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't get vars from context", "body": nil})
 		return
 	}
 
@@ -360,19 +414,22 @@ func PostLocToGeoState(c *gin.Context) { // {{{
 func PostGeoEvent(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 	var req md.ReqGeoEvent
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	fmt.Println(req)
 	res, err := mongo.PostGeoEvent(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -398,13 +455,15 @@ func GetRndLoc(c *gin.Context) { // {{{
 func GetDistance(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "database don't available", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "database don't available", "body": nil})
 	}
 
 	var req md.GeoLocation
 	err := c.Bind(&req)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -413,7 +472,8 @@ func GetDistance(c *gin.Context) { // {{{
 	user.Email = session.Get("user-id").(string)
 	user, err = mongo.GetUser(&user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
@@ -421,13 +481,15 @@ func GetDistance(c *gin.Context) { // {{{
 	point.Id = user.Id
 	point, err = mongo.GetLoc(&point)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	distance := point.GetDistance(&req)
 
-	c.JSON(http.StatusOK, gin.H{"msg": "get distance complete", "body": distance})
+	c.JSON(http.StatusOK,
+		gin.H{"msg": "get distance complete", "body": distance})
 } // }}}
 
 // ========== positioning location
@@ -435,7 +497,8 @@ func GetDistance(c *gin.Context) { // {{{
 func GetNearLoc(c *gin.Context) { // {{{
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	var req md.ReqNear
@@ -443,15 +506,18 @@ func GetNearLoc(c *gin.Context) { // {{{
 	fmt.Println(req)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
 	locs, err := mongo.GetNearLoc(&req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get points complete", "body": locs})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get points complete", "body": locs})
 	}
 } // }}}
 
@@ -460,7 +526,8 @@ func GetNearLoc(c *gin.Context) { // {{{
 func GetFilterEventLoc(c *gin.Context) {
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "can't connect to db", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
 	var req md.ReqELFilter
@@ -475,8 +542,10 @@ func GetFilterEventLoc(c *gin.Context) {
 	elocs, err := mongo.GetFilterEventLoc(&req)
 	fmt.Println(elocs)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": err.Error(), "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": err.Error(), "body": nil})
 	} else {
-		c.JSON(http.StatusOK, gin.H{"msg": "get filtered event-loc complete", "body": elocs})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get filtered event-loc complete", "body": elocs})
 	}
 }

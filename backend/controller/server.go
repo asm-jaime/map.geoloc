@@ -160,31 +160,6 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config, config *conf
 	return router
 }
 
-func InitDB() (err error) { // {{{
-	mongo := md.MongoDB{}
-	mongo.SetDefault()
-	err = mongo.SetSession()
-	if err != nil {
-		return err
-	}
-	defer mongo.Session.Close()
-
-	err = mongo.Drop()
-	if err != nil {
-		return err
-	}
-	err = mongo.Init()
-	if err != nil {
-		return err
-	}
-	err = mongo.FillRnd(100)
-	if err != nil {
-		return err
-	}
-
-	return err
-} // }}}
-
 func Start(args []string) (err error) { // {{{
 	// init config
 	config := conf.ServerConfig{}
@@ -234,5 +209,30 @@ func Start(args []string) (err error) { // {{{
 	// star server
 	router := NewRouter(&vars, &mongo, &coauth, &config)
 	router.Run(":" + config.Port)
+	return err
+} // }}}
+
+func InitDB() (err error) { // {{{
+	mongo := md.MongoDB{}
+	mongo.SetDefault()
+	err = mongo.SetSession()
+	if err != nil {
+		return err
+	}
+	defer mongo.Session.Close()
+
+	err = mongo.Drop()
+	if err != nil {
+		return err
+	}
+	err = mongo.Init()
+	if err != nil {
+		return err
+	}
+	err = mongo.FillRnd(100)
+	if err != nil {
+		return err
+	}
+
 	return err
 } // }}}

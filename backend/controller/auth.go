@@ -19,7 +19,8 @@ import (
 func AuthHandler(c *gin.Context) {
 	mongo, ok := c.Keys["db"].(*md.MongoDB)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"msg": "db not available", "body": nil})
+		c.JSON(http.StatusInternalServerError,
+			gin.H{"msg": "db not available", "body": nil})
 	}
 	coauth, _ := c.Keys["oauth"].(*oauth2.Config)
 
@@ -29,7 +30,8 @@ func AuthHandler(c *gin.Context) {
 
 	if ret_state != req_state {
 		fmt.Printf("retrievedState: %v\n queryState: %v\n", ret_state, req_state)
-		c.JSON(http.StatusUnauthorized, gin.H{"msg": "Invalid session state."})
+		c.JSON(http.StatusUnauthorized,
+			gin.H{"msg": "Invalid session state."})
 		return
 	}
 
@@ -37,7 +39,8 @@ func AuthHandler(c *gin.Context) {
 	token, err := coauth.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Login failed. Please try again."})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": "Login failed. Please try again."})
 		return
 	}
 
@@ -45,7 +48,8 @@ func AuthHandler(c *gin.Context) {
 	userinfo, err := client.Get("https://www.googleapis.com/oauth2/v3/userinfo")
 	if err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "bad request on google.com", "body": nil})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": "bad request on google.com", "body": nil})
 		return
 	}
 
@@ -54,14 +58,16 @@ func AuthHandler(c *gin.Context) {
 	user := md.User{}
 	if err = json.Unmarshal(data, &user); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Error marshalling response. Please try agian."})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": "Error marshalling response. Please try agian."})
 		return
 	}
 
 	session.Set("user-id", user.Email)
 	err = session.Save()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"msg": "Error save session. Please try again."})
+		c.JSON(http.StatusBadRequest,
+			gin.H{"msg": "Error save session. Please try again."})
 		return
 	}
 
@@ -70,7 +76,8 @@ func AuthHandler(c *gin.Context) {
 		err = mongo.PostUser(&user)
 		if err != nil {
 			log.Println(err)
-			c.JSON(http.StatusBadRequest, gin.H{"msg": "Error save user. Please try again."})
+			c.JSON(http.StatusBadRequest,
+				gin.H{"msg": "Error save user. Please try again."})
 			return
 		}
 	}
@@ -103,8 +110,10 @@ func FieldHandler(c *gin.Context) {
 	session := sessions.Default(c)
 	usermail := session.Get("user-id")
 	if usermail != "" {
-		c.JSON(http.StatusOK, gin.H{"msg": "get user-id succefull", "body": usermail})
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get user-id succefull", "body": usermail})
 	} else {
-		c.JSON(http.StatusNotFound, gin.H{"msg": "user-id 0 have not set", "body": nil})
+		c.JSON(http.StatusNotFound,
+			gin.H{"msg": "user-id 0 have not set", "body": nil})
 	}
 } // 0
