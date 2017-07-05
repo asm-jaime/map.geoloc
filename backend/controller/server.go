@@ -32,7 +32,7 @@ func MiddleVars(vars *Vars) gin.HandlerFunc { // {{{
 
 func MiddleDB(mongo *md.MongoDB) gin.HandlerFunc { // {{{
 	return func(c *gin.Context) {
-		err := mongo.SetSession()
+		err := mongo.Session.Ping()
 		if err != nil {
 			c.Abort()
 		} else {
@@ -215,10 +215,6 @@ func Start(args []string) (err error) { // {{{
 func InitDB() (err error) { // {{{
 	mongo := md.MongoDB{}
 	mongo.SetDefault()
-	err = mongo.SetSession()
-	if err != nil {
-		return err
-	}
 	defer mongo.Session.Close()
 
 	err = mongo.Drop()

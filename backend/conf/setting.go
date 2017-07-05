@@ -4,10 +4,8 @@ import (
 	//"errors"
 	"encoding/json"
 	"io/ioutil"
-	"time"
 
 	"github.com/kabukky/httpscerts"
-	mgo "gopkg.in/mgo.v2"
 	//"os"
 )
 
@@ -82,59 +80,6 @@ func (cred *Credentials) SetFromFile(keyf string) (err error) {
 		return err
 	}
 	return err
-}
-
-// }}}
-
-// ========== MongoDB section {{{
-
-// DbConfig can be set
-type DbConfig struct {
-	Host             string
-	Port             string
-	Addrs            string
-	Database         string
-	Username         string
-	Password         string
-	EventTTLAfterEnd time.Duration
-	StdEventTTL      time.Duration
-	Info             *mgo.DialInfo
-}
-
-func (config *DbConfig) SetDefault() {
-	// host database params
-	config.Port = "27017"
-	config.Host = "localhost"
-	config.Addrs = config.Host + ":" + config.Port
-	// database
-	config.Database = "dviMongo"
-	// user for requests
-	config.Username = "jaime"
-	config.Password = "123456789"
-	// time live events
-	config.EventTTLAfterEnd = 1 * time.Second
-	config.StdEventTTL = 20 * time.Minute
-	config.Info = &mgo.DialInfo{
-		Addrs:    []string{config.Addrs},
-		Timeout:  60 * time.Second,
-		Database: config.Database,
-		Username: config.Username,
-		Password: config.Password,
-	}
-}
-
-//mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]
-
-// MgoConfig return all data of config for connect to mongoDB
-func (config *DbConfig) MgoConfig() *mgo.DialInfo {
-	info := &mgo.DialInfo{
-		Addrs:    []string{config.Addrs},
-		Timeout:  60 * time.Second,
-		Database: config.Database,
-		Username: config.Username,
-		Password: config.Password,
-	}
-	return info
 }
 
 // }}}

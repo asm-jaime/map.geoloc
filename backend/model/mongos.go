@@ -31,7 +31,9 @@ func (mongo *MongoDB) SetDefault() { // {{{
 	mongo.Host = "localhost"
 	mongo.Addrs = mongo.Host + ":" + mongo.Port
 	// database
-	mongo.Database = "dviMongo"
+	if mongo.Database == "" {
+		mongo.Database = "dviMongo"
+	}
 	// user for requests
 	mongo.Username = "jaime"
 	mongo.Password = "123456789"
@@ -40,25 +42,16 @@ func (mongo *MongoDB) SetDefault() { // {{{
 	mongo.StdEventTTL = 20 * time.Minute
 	mongo.Info = &mgo.DialInfo{
 		Addrs:    []string{mongo.Addrs},
-		Timeout:  60 * time.Second,
+		Timeout:  3 * time.Second,
 		Database: mongo.Database,
 		Username: mongo.Username,
 		Password: mongo.Password,
+	}
+	err := mongo.SetSession()
+	if err != nil {
+		panic("db does not allow")
 	}
 } // }}}
-
-func (mongo *MongoDB) MgoConfig() *mgo.DialInfo { // {{{
-	info := &mgo.DialInfo{
-		Addrs:    []string{mongo.Addrs},
-		Timeout:  60 * time.Second,
-		Database: mongo.Database,
-		Username: mongo.Username,
-		Password: mongo.Password,
-	}
-	return info
-}
-
-// }}}
 
 // ========== sessions
 

@@ -17,24 +17,13 @@ import (
 
 func dbTest() (vars *Vars, mg *md.MongoDB, coauth *oauth2.Config, err error) { // {{{
 	mg = &md.MongoDB{}
-	mg.SetDefault()
 	mg.Database = "test"
-	mg.Info = mg.MgoConfig()
-
-	err = mg.SetSession()
-	if err != nil {
-		return vars, mg, coauth, err
-	}
+	mg.SetDefault()
 
 	err = mg.Init()
 	if err != nil {
 		return vars, mg, coauth, err
 	}
-
-	// err = mg.FillRnd(1)
-	// if err != nil {
-	// return vars, mg, coauth, err
-	// }
 
 	vars = &Vars{geoState: *md.NewGeoState()}
 	config := conf.ServerConfig{}
@@ -56,7 +45,6 @@ func dbTest() (vars *Vars, mg *md.MongoDB, coauth *oauth2.Config, err error) { /
 func dbProduct() *md.MongoDB { // {{{
 	mg := &md.MongoDB{}
 	mg.SetDefault()
-	mg.Info = mg.MgoConfig()
 	return mg
 } // }}}
 

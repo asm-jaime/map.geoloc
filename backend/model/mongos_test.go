@@ -11,14 +11,8 @@ import (
 
 func dbTest() (mg *MongoDB, err error) { // {{{
 	mg = &MongoDB{}
-	mg.SetDefault()
 	mg.Database = "test"
-	mg.Info = mg.MgoConfig()
-
-	err = mg.SetSession()
-	if err != nil {
-		return mg, err
-	}
+	mg.SetDefault()
 
 	err = mg.Init()
 	if err != nil {
@@ -31,7 +25,6 @@ func dbTest() (mg *MongoDB, err error) { // {{{
 func dbProduct() *MongoDB { // {{{
 	mg := &MongoDB{}
 	mg.SetDefault()
-	mg.Info = mg.MgoConfig()
 	return mg
 } // }}}
 
