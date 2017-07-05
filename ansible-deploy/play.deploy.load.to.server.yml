@@ -1,0 +1,4 @@
+---
+- hosts: flagship
+  roles:
+    - role: deploy.load.to.server
