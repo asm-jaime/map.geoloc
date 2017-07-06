@@ -22,7 +22,7 @@ const state = {
   },
   filter: {
     tobject: 'User', tgeos: 'Point', ttime: 'Any',
-    tags: [], scope: 0, lng: 0, lat: 0,
+    tags: ['whoredom'], scope: 0, lng: 0, lat: 0,
   },
   points: [],
   error: { status: 0, message: '' },

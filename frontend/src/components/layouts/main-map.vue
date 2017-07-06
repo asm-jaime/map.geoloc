@@ -130,21 +130,21 @@
       },//}}}
       reShowPoints: function(){//{{{
         const points = this.POINTS;
-        if(points === null || points === undefined) {
-          return;
-        };
         for(let i = 0; i < this.markers.length; i++){
           this.markers[i].setMap(null);
         };
         this.markers = [];
+        if(points === null || points === undefined) {
+          return;
+        };
         // set points to map
         for(let i = 0; i < points.length; i++){
           setTimeout(()=> {
             const marker = new google.maps.Marker({
               id: points[i]._id,
               position: {
-                lng: points[i].location.coordinates[0],
-                lat: points[i].location.coordinates[1]
+                lng: points[i].Location.coordinates[0],
+                lat: points[i].Location.coordinates[1]
               },
               draggable: false,
               //animation: google.maps.Animation.DROP,

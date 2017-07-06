@@ -12,4 +12,7 @@ export const resPoints = Vue.resource(api_point.POINTS)
 export const resRndPoint = Vue.resource(api_point.RND)
 export const resAllPoint = Vue.resource(api_point.ALL)
 export const resNearPoint = Vue.resource(api_point.NEAR)
-export const resFilterPoint = Vue.resource(api_point.FILTER)
+export const resFilterPoint = Vue.resource(
+  api_point.FILTER+'?tobject={tobject}&tgeos={tgeos}'+
+  '&ttime={ttime}&tags={tags*}&scope={scope}&lng={lng}&lat={lat}'
+)

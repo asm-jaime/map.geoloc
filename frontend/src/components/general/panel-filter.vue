@@ -1,7 +1,7 @@
 <template>
   <div class="row panel-filter">
     <div class="col" style="padding-left: 35px;">
-      <filter-tag :tags="tags"></filter-tag>
+      <filter-tag :tags="FILTER.tags"></filter-tag>
     </div>
     <b-button-group horizontal class="pull-right">
       <div class="col">
@@ -40,7 +40,6 @@ export default {
   },
   data(){//{{{
     return {
-      tags: ['mommy','father','dfsag'],
       tobjects: [],
       tgeoses: [],
       ttimes: [],
@@ -67,7 +66,9 @@ export default {
         tgeos: this.FILTER.tgeos,
         tobject: this.FILTER.tobject,
         ttime: this.FILTER.ttime,
+        tags: this.FILTER.tags,
       };
+      console.log("reqFilter: ",reqFilter);
       this.SET_FILTER(reqFilter).then(() => {
         return this.GET_FILTER(this.FILTER);
       }).then(() => {
