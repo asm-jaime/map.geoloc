@@ -95,20 +95,13 @@ type (
 	}
 
 	ReqFilter struct {
-		Scope   float64 `form:"scope" json:"scope,omitempty"`
-		TGeos   string  `form:"tgeos" json:"tgeos,omitempty"`
-		TObject string  `form:"tobject" json:"tobject,omitempty"`
-		Lat     float64 `form:"lat" json:"lat,omitempty"`
-		Lng     float64 `form:"lng" json:"lng,omitempty"`
-	}
-
-	ReqELFilter struct {
-		Scope float64  `form:"scope" json:"scope,omitempty"`
-		Tags  []string `form:"tags" json:"tags,omitempty"`
-		TTime string   `form:"ttime" json:"ttime,omitempty"`
-		TGeos string   `form:"tgeos" json:"tgeos,omitempty"`
-		Lat   float64  `form:"lat" json:"lat,omitempty"`
-		Lng   float64  `form:"lng" json:"lng,omitempty"`
+		Scope   float64  `form:"scope" json:"scope,omitempty"`
+		Tags    []string `form:"tags" json:"tags,omitempty"`
+		TTime   string   `form:"ttime" json:"ttime,omitempty"`
+		TGeos   string   `form:"tgeos" json:"tgeos,omitempty"`
+		TObject string   `form:"tobject" json:"tobject,omitempty"`
+		Lat     float64  `form:"lat" json:"lat,omitempty"`
+		Lng     float64  `form:"lng" json:"lng,omitempty"`
 	}
 
 	EventLoc struct {
@@ -116,6 +109,7 @@ type (
 		Name      string        `form:"name" bson:"name,omitempty"`
 		Text      string        `form:"text" bson:"text,omitempty"`
 		Tags      []string      `form:"tags" bson:"tags,omitempty"`
+		TObject   string        `form:"tobject" bson:"tobject,omitempty"`
 		Timestamp time.Time     `form:"timestamp" bson:"timestamp,omitempty"`
 		Location  GeoObject     `form:"location" bson:"location,omitempty"`
 	}

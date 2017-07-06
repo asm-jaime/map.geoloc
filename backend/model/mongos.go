@@ -7,6 +7,7 @@ import (
 
 	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"strings"
 )
 
 // ========== configure
@@ -438,7 +439,8 @@ func (mongo *MongoDB) PostGeoEvent(geoevent *ReqGeoEvent) (res RespondID, err er
 	return res, err
 } // }}}
 
-func (mongo *MongoDB) GetFilterEventLoc(filter *ReqELFilter) (elocs []EventLoc, err error) {
+func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err error) {
+	fmt.Println(filter)
 	session := mongo.Session.Clone()
 	defer session.Close()
 
@@ -457,92 +459,137 @@ func (mongo *MongoDB) GetFilterEventLoc(filter *ReqELFilter) (elocs []EventLoc, 
 			"maxDistance":   filter.Scope,
 		},
 	})
-
-	params = append(params, bson.M{
-		"$lookup": bson.M{
-			"from":         "dviEvents",
-			"localField":   "_id",
-			"foreignField": "_id",
-			"as":           "Events",
-		},
-	})
-
-	params = append(params, bson.M{
-		"$unwind": bson.M{
-			"path": "$Events",
-			"preserveNullAndEmptyArrays": true,
-		},
-	})
-
-	if len(filter.Tags) > 0 {
+	if len(filter.TObject) > 0 {
 		params = append(params, bson.M{
 			"$match": bson.M{
-				"Events.tags": bson.M{"$in": filter.Tags},
-			},
-		})
-	}
-	// Recently, Today, Yesterday, Week, Month
-	if filter.TTime != "" {
-		today := time.Now()
-		date_start := time.Time{}
-		date_end := today
-		switch filter.TTime { // {{{
-		case "Recently":
-			date_start = today.Add(-4 * time.Hour)
-			date_end = today
-		case "Today":
-			year, month, day := today.Date()
-			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
-		case "Yesterday":
-			today = today.Add(-24 * time.Hour)
-			year, month, day := today.Date()
-			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
-		case "Week":
-			year, month, day := today.Date()
-			date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-			for date_start.Weekday() != time.Monday {
-				date_start = date_start.AddDate(0, 0, -1)
-			}
-			for date_end.Weekday() != time.Sunday {
-				date_end = date_end.AddDate(0, 0, 1)
-			}
-			date_end = date_end.Add(24 * time.Hour)
-		case "Month":
-			year, month, _ := today.Date()
-			date_start = time.Date(year, month, 1, 0, 0, 0, 0, today.Location())
-			date_end = time.Date(year, month, 32, 0, 0, 0, 0, today.Location())
-			reg_month := date_end.Month()
-			for date_end.Month() == reg_month {
-				date_end = date_end.AddDate(0, 0, -1)
-			}
-			date_end = date_end.AddDate(0, 0, 1)
-		} // }}}
-		params = append(params, bson.M{
-			"$match": bson.M{
-				"Events.timestamp": bson.M{"$gt": date_start, "$lt": date_end},
+				"tobject": filter.TObject,
 			},
 		})
 	}
 
-	params = append(params, bson.M{
-		"$project": bson.M{
-			"_id":       1,
-			"name":      "$Events.name",
-			"tags":      "$Events.tags",
-			"text":      "$Events.text",
-			"timestamp": "$Events.timestamp",
-			"location":  1,
-		},
-	})
+	if filter.TObject == "Event" {
+		params = append(params, bson.M{
+			"$lookup": bson.M{
+				"from":         "dviEvents",
+				"localField":   "_id",
+				"foreignField": "_id",
+				"as":           "Events",
+			},
+		})
+		params = append(params, bson.M{
+			"$unwind": bson.M{
+				"path": "$Events",
+				"preserveNullAndEmptyArrays": true,
+			},
+		})
+		if len(filter.Tags) > 0 && filter.Tags[0] != "" {
+			filter.Tags = strings.Split(filter.Tags[0], ",")
+			params = append(params, bson.M{
+				"$match": bson.M{
+					"Events.tags": bson.M{"$in": filter.Tags},
+				},
+			})
+		}
+		// Recently, Today, Yesterday, Week, Month
+		if filter.TTime != "" {
+			date_start, date_end := wordToDate(filter.TTime)
+			params = append(params, bson.M{
+				"$match": bson.M{
+					"Events.timestamp": bson.M{"$gt": date_start, "$lt": date_end},
+				},
+			})
+		}
+		params = append(params, bson.M{
+			"$project": bson.M{
+				"_id":       1,
+				"name":      "$Events.name",
+				"tags":      "$Events.tags",
+				"text":      "$Events.text",
+				"timestamp": "$Events.timestamp",
+				"tobject":   1,
+				"location":  1,
+			},
+		})
+	} else if filter.TObject == "User" {
+		params = append(params, bson.M{
+			"$lookup": bson.M{
+				"from":         "dviUsers",
+				"localField":   "_id",
+				"foreignField": "_id",
+				"as":           "Users",
+			},
+		})
+		params = append(params, bson.M{
+			"$unwind": bson.M{
+				"path": "$Users",
+				"preserveNullAndEmptyArrays": true,
+			},
+		})
+		if len(filter.Tags) > 0 && filter.Tags[0] != "" {
+			filter.Tags = strings.Split(filter.Tags[0], ",")
+			params = append(params, bson.M{
+				"$match": bson.M{
+					"Users.tags": bson.M{"$in": filter.Tags},
+				},
+			})
+		}
+		params = append(params, bson.M{
+			"$project": bson.M{
+				"_id":      1,
+				"name":     "$Users.name",
+				"tags":     "$Users.tags",
+				"text":     "$Users.text",
+				"tobject":  1,
+				"location": 1,
+			},
+		})
+	}
 
 	//fmt.Println(params)
 	err = session.DB(mongo.Database).C("dviLocations").Pipe(params).All(&elocs)
-
 	return elocs, err
 }
+
+func wordToDate(ttime string) (date_start time.Time, date_end time.Time) { // {{{
+	today := time.Now()
+	date_start = time.Time{}
+	date_end = today
+	switch ttime {
+	case "Recently":
+		date_start = today.Add(-4 * time.Hour)
+		date_end = today
+	case "Today":
+		year, month, day := today.Date()
+		date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
+	case "Yesterday":
+		today = today.Add(-24 * time.Hour)
+		year, month, day := today.Date()
+		date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
+	case "Week":
+		year, month, day := today.Date()
+		date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		date_end = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		for date_start.Weekday() != time.Monday {
+			date_start = date_start.AddDate(0, 0, -1)
+		}
+		for date_end.Weekday() != time.Sunday {
+			date_end = date_end.AddDate(0, 0, 1)
+		}
+		date_end = date_end.Add(24 * time.Hour)
+	case "Month":
+		year, month, _ := today.Date()
+		date_start = time.Date(year, month, 1, 0, 0, 0, 0, today.Location())
+		date_end = time.Date(year, month, 32, 0, 0, 0, 0, today.Location())
+		reg_month := date_end.Month()
+		for date_end.Month() == reg_month {
+			date_end = date_end.AddDate(0, 0, -1)
+		}
+		date_end = date_end.AddDate(0, 0, 1)
+	}
+	return date_start, date_end
+} // }}}
 
 // ========== geostate
 

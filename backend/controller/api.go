@@ -523,24 +523,24 @@ func GetNearLoc(c *gin.Context) { // {{{
 
 // ========== filtered location
 
-func GetFilterEventLoc(c *gin.Context) {
+func GetFiltered(c *gin.Context) {
 	mongo, ok := c.Keys["mongo"].(*md.MongoDB)
 	if !ok {
 		c.JSON(http.StatusInternalServerError,
 			gin.H{"msg": "can't connect to db", "body": nil})
 	}
 
-	var req md.ReqELFilter
+	var req md.ReqFilter
 	err := c.Bind(&req)
-	fmt.Println(req)
+	// fmt.Println(req)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"msg": err.Error(), "body": nil})
 		return
 	}
 
-	elocs, err := mongo.GetFilterEventLoc(&req)
-	fmt.Println(elocs)
+	elocs, err := mongo.GetFiltered(&req)
+	// fmt.Println(elocs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			gin.H{"msg": err.Error(), "body": nil})

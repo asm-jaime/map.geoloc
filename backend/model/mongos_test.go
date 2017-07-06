@@ -144,35 +144,6 @@ func _TestNearLoc(t *testing.T) { // {{{
 	fmt.Printf("\nlocs: %v\n", locs)
 } // }}}
 
-func _TestFilterLoc(t *testing.T) { // {{{
-	num := 500
-	tdb, err := dbTest()
-	if err != nil {
-		t.Error("err connect db in FillRnd: ", err)
-	}
-	err = tdb.FillRnd(num)
-	if err != nil {
-		t.Error("err Fill: ", err)
-	}
-	// case user today
-	{
-		req := ReqFilter{}
-		req.Scope = 3.14
-		req.TGeos = "Point"
-		req.TObject = "Event"
-		//latitude in degrees is -90 and +90
-		req.Lat = (rand.Float64() * 180) - 90
-		//Longitude is in the range -180 and +180
-		req.Lng = (rand.Float64() * 360) - 180
-		//req.TTime
-		locs, err := tdb.GetFilterLoc(&req)
-		if err != nil {
-			t.Error("err in filled: ", err)
-		}
-		fmt.Println(locs)
-	}
-} // }}}
-
 func _TestGeoEvent(t *testing.T) { // {{{
 	tdb, err := dbTest()
 
@@ -215,7 +186,7 @@ func TestFilterEventLoc(t *testing.T) {
 	}
 	// case user today
 	{
-		req := ReqELFilter{}
+		req := ReqFilter{}
 		req.Scope = 3.1
 		//req.Tags = append(req.Tags, "whoredom")
 		//req.Tags = append(req.Tags, "debauch")
@@ -229,7 +200,7 @@ func TestFilterEventLoc(t *testing.T) {
 		req.Lng = 8
 		//req.TTime
 		//fmt.Println(req)
-		elocs, err := tdb.GetFilterEventLoc(&req)
+		elocs, err := tdb.GetFiltered(&req)
 		if err != nil {
 			t.Error("err in ELFilter: ", err)
 		}
