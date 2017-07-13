@@ -60,9 +60,6 @@ func (mongo *MongoDB) SetSession() (err error) { // {{{
 	mongo.Session, err = mgo.DialWithInfo(mongo.Info)
 	if err != nil {
 		mongo.Session, err = mgo.Dial(mongo.Host)
-		if err != nil {
-			return err
-		}
 	}
 	return err
 } // }}}
