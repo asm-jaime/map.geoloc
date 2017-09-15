@@ -1,10 +1,10 @@
-var path = require('path')
-var webpack = require('webpack')
+const path = require('path');
+const webpack = require('webpack');
 
-const productionURL = "http://geopos.online:8081"
-const developmentURL = "http://localhost:8081"
+const productionURL = 'http://geopos.online:8081';
+const developmentURL = 'http://localhost:8081';
 
-var URL = process.env.NODE_ENV === 'production' ? productionURL : developmentURL;
+const URL = process.env.NODE_ENV === 'production' ? productionURL : developmentURL;
 
 module.exports = {
   entry: './src/main.js',
@@ -13,10 +13,8 @@ module.exports = {
     filename: 'public/build.js',
     sourceMapFilename: 'public/build.map'
   },
-  resolveLoader: {
-    root: path.join(__dirname, 'node_modules'),
-  },
   resolve: {
+    modules: [__dirname, 'node_modules'],
     alias: {
       vue: 'vue/dist/vue.js'
     }
@@ -24,10 +22,10 @@ module.exports = {
   module: {
     loaders: [{
       test: /\.vue$/,
-      loader: 'vue'
+      loader: 'vue-loader'
     }, {
       test: /\.js$/,
-      loader: 'babel',
+      loader: 'babel-loader',
       exclude: /node_modules/
     }, {
       test: /\.(png|jpg|gif|svg)$/,
@@ -37,15 +35,15 @@ module.exports = {
       }
     }, {
       test: /\.css$/,
-      loader: "style-loader!css-loader"
+      loader: 'style-loader!css-loader',
     }]
   },
   devtool: '#eval-source-map',
-}
+};
 
 if (process.env.NODE_ENV === 'production') {
-  module.exports.devtool = '#source-map'
-    // http://vue-loader.vuejs.org/en/workflow/production.html
+  module.exports.devtool = '#source-map';
+  // http://vue-loader.vuejs.org/en/workflow/production.html
   module.exports.plugins = (module.exports.plugins || []).concat([
     new webpack.DefinePlugin({
       API_URL: JSON.stringify(URL),
@@ -59,9 +57,9 @@ if (process.env.NODE_ENV === 'production') {
       }
     }),
     new webpack.optimize.OccurenceOrderPlugin()
-  ])
+  ]);
 } else {
-  module.exports.devtool = '#source-map'
+  module.exports.devtool = '#source-map';
   module.exports.plugins = (module.exports.plugins || []).concat([
     new webpack.DefinePlugin({
       API_URL: JSON.stringify(URL),
@@ -69,6 +67,5 @@ if (process.env.NODE_ENV === 'production') {
         NODE_ENV: '"development"'
       }
     }),
-  ])
-
+  ]);
 }

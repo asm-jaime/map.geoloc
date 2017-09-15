@@ -14,13 +14,9 @@
     </div>
 
     <div class="container">
-    <pic-zone class="col"></pic-zone>
-    </div>
-
-    <div class="container">
       <div class="row">
       <div class="col">
-      <small class="text-muted">tags: {{ NEW_POINT.tags }}</small>
+      <small class="text-muted">tags: {{ point.tags }}</small>
       </div>
       </div>
     </div>
@@ -49,7 +45,6 @@
 </template>
 
 <script>
-import PicZone from '../general/pic-zone.vue'
 
 import * as anime from '../../api/api.animation.js'
 
@@ -60,28 +55,51 @@ import * as gets from '../../constants/types.getters.js'
 
 export default {
   name: 'NewPoint',
-  components: {//{{{
-    PicZone,
-  },//}}}
-  data(){//{{{
-    return {
-      tobject: [],
+  watch: {
+    $route() {
+      this.show_point();
     }
-  },//}}}
-  computed: {
-    ...mapGetters([//{{{
-      gets.NEW_POINT,
-    ]),//}}}
   },
-  mounted: function() {//{{{
-    this.tobject = types.TYPE_OBJECT;
-  },//}}}
+  components: {
+  },
+
+  data(){
+    const point = {
+      Id: 'no id', Name: 'no name',
+      TObject: 'no object', Tags: [], Text: 'no text',
+      Location: { type: 'no type', coordinates: [ 0.00001, 0.00001 ] },
+    };
+    return {
+      point,
+    }
+  },
+
+  computed: {
+    ...mapGetters([
+      gets.NEW_POINT,
+    ]),
+  },
+
+  mounted: function() {
+    this.show_point();
+  },
+
   methods: {
-    ...mapActions([//{{{
+    ...mapActions([
       acts.PST_POINT,
       acts.SET_TAGS,
-    ]),//}}}
-    postNewPoint() {//{{{
+    ]),
+    show_point() {
+      console.log(this.$route.params);
+      const point = this.POINTS.find((item) => item.Id == this.$route.params.id);
+      if(point) { this.point = point } else {
+        setTimeout(()=>{
+          const point = this.POINTS.find((item) => item.Id == this.$route.params.id);
+          if(point) { this.point = point };
+        }, 3000);
+      };
+    },
+    postNewPoint() {
       console.log(this.NEW_POINT);
       const point = {
         token: this.NEW_POINT.token,
@@ -105,13 +123,13 @@ export default {
           console.log(e);
           anime.blink_err(this.$refs.btn_ok);
         })
-    },//}}}
-    close() {//{{{
+    },
+    close() {
       this.$router.push({path:`/map`});
-    },//}}}
-    setTags() {//{{{
+    },
+    setTags() {
       this.SET_TAGS();
-    },//}}}
+    },
   },
 }
 </script>

@@ -49,11 +49,4 @@ export default {
 </script>
 
 <style>
-  html,
-  body {}
-  .main-panel {
-    width: 100%;
-    /*position: absolute;*/
-    z-index: 2;
-  }
 </style>

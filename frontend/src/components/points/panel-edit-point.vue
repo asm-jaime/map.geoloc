@@ -32,16 +32,17 @@
 </template>
 
 <script>
-import * as anime from '../../api/api.animation.js'
 
-import { mapGetters, mapActions } from 'vuex'
-import * as types from '../../constants/types.some.js'
-import * as acts from '../../constants/types.actions.js'
-import * as gets from '../../constants/types.getters.js'
+import * as anime from '../../api/api.animation.js';
+
+import { mapGetters, mapActions } from 'vuex';
+import * as types from '../../constants/types.some.js';
+import * as acts from '../../constants/types.actions.js';
+import * as gets from '../../constants/types.getters.js';
 
 export default {
   name: 'EditPoint',
-  data(){//{{{
+  data(){
     const edit_point = {
       id: '', token: '', editable: true,
       type: '', latitude: 0.0, longitude: 0.0,
@@ -50,8 +51,9 @@ export default {
       edit_point,
       tgeoses: [],
     };
-  },//}}}
-  mounted: function() {//{{{
+  },
+
+  mounted: function() {
     this.tgeoses = types.TYPE_GEOS;
 
     const edit_point = this.POINTS.find((e) => e._id == this.$route.params.id);
@@ -61,18 +63,20 @@ export default {
     this.edit_point.type = edit_point.location.type;
     this.edit_point.latitude = edit_point.location.coordinates[0];
     this.edit_point.longitude = edit_point.location.coordinates[1];
-  },//}}}
-  computed: {
-    ...mapGetters([//{{{
-      gets.POINTS,
-    ]),//}}}
   },
+
+  computed: {
+    ...mapGetters([
+      gets.POINTS,
+    ]),
+  },
+
   methods: {
-    ...mapActions([//{{{
+    ...mapActions([
       acts.PST_POINT,
       acts.DEL_POINT,
-    ]),//}}}
-    putPoint() {//{{{
+    ]),
+    putPoint() {
       const point = {
         _id: this.edit_point.id,
         token: this.edit_point.token,
@@ -85,34 +89,34 @@ export default {
         }
       };
       this.PUT_POINT(point)
-        .then((e)=>{
+        .then((e) => {
           return anime.blink_good(this.$refs.btn_ok);
         })
-        .then(()=>{
+        .then(() => {
           this.close();
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
           anime.blink_err(this.$refs.btn_ok);
         })
-    },//}}}
-    delPoint() {//{{{
+    },
+    delPoint() {
       const point = { id: this.edit_point.id };
       this.DEL_POINT(point)
-        .then((e)=>{
+        .then((e) => {
           return anime.blink_good(this.$refs.btn_del);
         })
-        .then(()=>{
+        .then(() => {
           this.close();
         })
-        .catch(e => {
+        .catch((e) => {
           console.log(e);
           anime.blink_err(this.$refs.btn_del);
-        })
-    },//}}}
-    close() {//{{{
-      this.$router.push({path:`/map`});
-    },//}}}
+        });
+    },
+    close() {
+      this.$router.push({path:'/map'});
+    },
   },
 }
 </script>

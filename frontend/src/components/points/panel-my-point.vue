@@ -16,28 +16,32 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex'
-import * as gets from '../../constants/types.getters.js'
-import * as acts from '../../constants/types.actions.js'
+
+import { mapGetters, mapActions } from 'vuex';
+import * as gets from '../../constants/types.getters.js';
+import * as acts from '../../constants/types.actions.js';
 
 export default {
   name: 'MyPoint',
-  data(){//{{{
+  data(){
     return {
     }
-  },//}}}
-  mounted: function() {//{{{
-    console.log(this.MY_POINT);
-  },//}}}
-  computed: {
-    ...mapGetters([//{{{
-      gets.MY_POINT,
-    ]),//}}}
   },
+
+  mounted: function() {
+    console.log(this.MY_POINT);
+  },
+
+  computed: {
+    ...mapGetters([
+      gets.MY_POINT,
+    ]),
+  },
+
   methods: {
-    close() {//{{{
-      this.$router.push({path:`/map`});
-    },//}}}
+    close() {
+      this.$router.push({path:'/map'});
+    },
   },
 }
 </script>

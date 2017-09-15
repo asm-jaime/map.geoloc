@@ -1,17 +1,17 @@
 var gulp = require('gulp');
-var cp = require('child_process');
+// var cp = require('child_process');
 var del = require('del');
 var webpack = require('webpack-stream');
 var webpackConfig = require('./webpack.config.js');
-var nodemon = require('gulp-nodemon');
-var rename = require('gulp-rename');
+// var nodemon = require('gulp-nodemon');
+// var rename = require('gulp-rename');
 var livereload = require('gulp-livereload');
 var exec = require('child_process').exec;
 
 gulp.task('clean:build', function() {
-  del('./public/build.js')
-  del('./public/build.map')
-})
+  del('./public/build.js');
+  del('./public/build.map');
+});
 
 gulp.task('copy:dev', function() {
   return gulp.src('./public/**/*')
@@ -22,10 +22,10 @@ gulp.task('build', ['clean:build'], function() {
   return gulp.src('./src/main.js')
     .pipe(webpack(webpackConfig))
     .on('error', function handleError() {
-      this.emit('end'); // Recover from errors
+      this.emit('end');
     })
     .pipe(gulp.dest('./'))
-    .pipe(gulp.dest('./../backend')) // copy to geoloc repository
+    .pipe(gulp.dest('./../backend'))
     .pipe(livereload());
 });
 

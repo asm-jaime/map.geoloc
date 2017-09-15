@@ -1,20 +1,19 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import BootstrapVue from 'bootstrap-vue'
+import Vue from 'vue';
+import VueRouter from 'vue-router';
+import BootstrapVue from 'bootstrap-vue';
 
-import 'bootstrap/dist/css/bootstrap.css'
-import 'bootstrap-vue/dist/bootstrap-vue.css'
+import 'bootstrap/dist/css/bootstrap.css';
+import 'bootstrap-vue/dist/bootstrap-vue.css';
 
-import App from './components/app.vue'
+import App from './components/app.vue';
 
-import MainMap from './components/layouts/main-map.vue'
+import MainMap from './components/layouts/main-map.vue';
 
-import PanelPoint from './components/points/panel-point.vue'
-import PanelEditPoint from './components/points/panel-edit-point.vue'
-import PanelMyPoint from './components/points/panel-my-point.vue'
-import PanelNewPoint from './components/points/panel-new-point.vue'
+import PanelPoint from './components/points/panel-point.vue';
+import PanelEditPoint from './components/points/panel-edit-point.vue';
+import PanelMyPoint from './components/points/panel-my-point.vue';
 
-import store from './store.js'
+import store from './store.js';
 
 Vue.use(VueRouter);
 Vue.use(BootstrapVue);
@@ -26,7 +25,7 @@ const router = new VueRouter({
   routes: [
     {path: '/', redirect: '/map'},
     {path: '/map', component: MainMap, children: [
-      {path: 'new', component: PanelNewPoint},
+      {path: 'new', component: PanelEditPoint},
       {path: 'my', component: PanelMyPoint},
       {path: ':id', component: PanelPoint},
       {path: ':id/edit', component: PanelEditPoint},
@@ -40,4 +39,4 @@ new Vue({
   store,
   router,
   render: h => h(App),
-})
+});

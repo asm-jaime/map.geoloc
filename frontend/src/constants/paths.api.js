@@ -1,6 +1,6 @@
 export const USERS = {
   USER: `${API_URL}/api/v1/users`,
-}
+};
 
 export const POINTS = {
   POINTS: `${API_URL}/api/v1/points`,
@@ -9,15 +9,15 @@ export const POINTS = {
   NEAR: `${API_URL}/api/v1/points/near`,
   STATE: `${API_URL}/api/v1/points/state`,
   FILTER: `${API_URL}/api/v1/points/filter`,
-}
+};
 
-const env_const = { //{{{
-    STATUS_OK: 200,
-    CONFIG_GET: {
-      method: "GET",
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: "include",
+export const env_const = { //{{{
+  STATUS_OK: 200,
+  CONFIG_GET: {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
     },
-  } //}}}
+    credentials: 'include',
+  },
+};//}}}
