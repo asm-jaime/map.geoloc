@@ -230,7 +230,7 @@ func _TestPutLocation(t *testing.T) { // {{{
 			t.Errorf("error put point 2: %v", err)
 		}
 
-		if putted_point.Token == res.Body.Token {
+		if putted_point.Id.Hex() == res.Body.Id.Hex() {
 			t.Error("error, put point not changed")
 		}
 

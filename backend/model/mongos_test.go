@@ -81,7 +81,6 @@ func _TestLocation(t *testing.T) { // {{{
 			t.Error("error post Point: ", err)
 		}
 		spoint := GeoLocation{}
-		spoint.Token = point.Token
 		gpoint, err := tdb.GetLoc(&spoint)
 		if err != nil {
 			t.Error("error post Point: ", err)
@@ -99,7 +98,6 @@ func _TestLocation(t *testing.T) { // {{{
 		if err != nil {
 			t.Error("err post 1: ", err)
 		}
-		// fmt.Printf("\npoint %v posted\n", point.Token)
 
 		spoint := GeoLocation{}
 		spoint.SetRnd()
@@ -114,7 +112,7 @@ func _TestLocation(t *testing.T) { // {{{
 		if err != nil {
 			t.Error("err get: ", err)
 		}
-		if point.Id == gpoint.Id && point.Token == gpoint.Token {
+		if point.Id == gpoint.Id {
 			t.Error("err locs do not updated: ", err)
 		}
 	}
@@ -170,7 +168,7 @@ func _TestGeoEvent(t *testing.T) { // {{{
 		if err != nil {
 			t.Error("err get: ", err)
 		}
-		assert.Equal(t, loc.Token, gloc.Token, "token does not match")
+		assert.Equal(t, loc.Id.Hex(), gloc.Id.Hex(), "id does not match")
 	}
 } // }}}
 

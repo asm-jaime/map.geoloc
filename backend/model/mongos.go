@@ -148,16 +148,6 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== Locs
 	collection = session.DB(mongo.Database).C("dviLocations")
 	index = mgo.Index{
-		Key:        []string{"token"},
-		Unique:     false,
-		Background: true,
-		Sparse:     true,
-	}
-	err = collection.EnsureIndex(index)
-	if err != nil {
-		return err
-	}
-	index = mgo.Index{
 		Key:  []string{"$2dsphere:location"},
 		Bits: 26,
 	}
@@ -343,11 +333,6 @@ func (mongo *MongoDB) GetLoc(point *GeoLocation) (gpoint GeoLocation, err error)
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if point.Token != "" {
-		err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{"token": point.Token}).One(&gpoint)
-		return gpoint, err
-	}
-
 	if point.Id.Hex() != "" {
 		err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{"_id": point.Id}).One(&gpoint)
 		return gpoint, err
@@ -391,13 +376,6 @@ func (mongo *MongoDB) DelLoc(point *GeoLocation) (err error) { // {{{
 	if point.Id.Hex() != "" {
 		fmt.Println(point.Id)
 		err = session.DB(mongo.Database).C("dviLocations").RemoveId(point.Id)
-		return err
-	}
-
-	if point.Token != "" {
-		err = session.DB(mongo.Database).C("dviLocations").Remove(bson.M{
-			"token": point.Token,
-		})
 	}
 	return err
 } // }}}

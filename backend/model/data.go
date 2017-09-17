@@ -65,7 +65,6 @@ type (
 
 	GeoLocation struct {
 		Id       bson.ObjectId `form:"_id" json:"_id,omitempty" bson:"_id,omitempty"`
-		Token    string        `form:"token" json:"token,omitempty" bson:"token,omitempty"`
 		TObject  string        `form:"tobject" json:"tobject,omitempty" bson:"tobject,omitempty"`
 		Location GeoObject     `form:"location" json:"location,omitempty" bson:"location,omitempty"`
 	}
@@ -124,7 +123,7 @@ func NewGeoState() *GeoState {
 	}
 } // }}}
 
-// Add new point with token {{{
+// Add new point {{{
 func (geost *GeoState) Add(point *GeoLocation) {
 	geost.Lock()
 	defer geost.Unlock()
@@ -161,7 +160,7 @@ func (geost *GeoState) Len() int {
 	return len(geost.Locations)
 } // }}}
 
-// GetLoc new point with token {{{
+// GetLoc new point {{{
 func (geost *GeoState) GetLoc(id bson.ObjectId) (point GeoLocation, ok bool) {
 	geost.Lock()
 	defer geost.Unlock()
@@ -174,7 +173,6 @@ func (geost *GeoState) GetLoc(id bson.ObjectId) (point GeoLocation, ok bool) {
 func (point *GeoLocation) SetRnd() { // {{{
 	rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
 	point.Id = bson.NewObjectId()
-	point.Token = gen.Str(8)
 	point.TObject = []string{"User", "Event"}[rnd.Intn(2)]
 
 	point.Location.Type = []string{"Point"}[0]

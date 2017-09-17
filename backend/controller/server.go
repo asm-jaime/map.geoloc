@@ -127,7 +127,7 @@ func NewRouter(vars *Vars, mongo *md.MongoDB, oauth *oauth2.Config, config *conf
 
 				event.GET("/all", GetEvents)
 			}
-			point := v1.Group("points")
+			point := v1.Group("locs")
 			point.Use(MiddleVars(vars))
 			{
 				point.GET("", GetLoc)
