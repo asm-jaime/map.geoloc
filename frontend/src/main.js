@@ -11,7 +11,6 @@ import MapGoogle from './components/layouts/map-google.vue';
 
 import PanelLoc from './components/location/panel-loc.vue';
 import PanelLocEdit from './components/location/panel-loc-edit.vue';
-import PanelLocMe from './components/location/panel-loc-me.vue';
 
 import store from './store.js';
 
@@ -25,9 +24,27 @@ const router = new VueRouter({
   routes: [
     {path: '/', redirect: '/map'},
     {path: '/map', component: MapGoogle, children: [
-      {path: 'me', component: PanelLocMe},
-      {path: ':id', component: PanelLoc},
-      {path: ':id/edit',
+      {path: 'me', component: PanelLoc,
+        props: (route) => {
+          return {
+            id: route.params.id,
+            tobject: route.query.tobject,
+            lat: route.query.lat,
+            lng: route.query.lng,
+          };
+        },
+      },
+      {path: ':id', component: PanelLoc,
+        props: (route) => {
+          return {
+            id: route.params.id,
+            tobject: route.query.tobject,
+            lat: route.query.lat,
+            lng: route.query.lng,
+          };
+        },
+      },
+      {path: ':id/edit', component: PanelLocEdit,
         props: (route) => {
           return {
             tobject: route.query.tobject,
@@ -35,7 +52,7 @@ const router = new VueRouter({
             lng: route.query.lng,
           };
         },
-        component: PanelLocEdit},
+      },
       {path: 'new', component: PanelLocEdit,
         props: (route) => {
           return {

@@ -87,15 +87,14 @@ export default {
             animation: google.maps.Animation.mo,
             map: this.map,
           });
-          if(locs[i].editable) {
-            marker.addListener('click',
-              () => this.$router.push({path:`/map/${locs[i].Id}/edit`}));
-          } else {
-            marker.addListener('click',
-              () => this.$router.push({path:`/map/${locs[i].Id}`}));
-          };
+          marker.addListener('click',
+            () => this.$router.push({
+              path: `/map/${locs[i].Id}/?tobject=${locs[i].TObject}`+
+              `&lat=${locs[i].Location.coordinates[0]}`+
+              `&lng=${locs[i].Location.coordinates[1]}`,
+            }));
           this.markers.push(marker);
-        }, 10*i);
+        }, 200*i);
       }
     },
 
@@ -108,9 +107,8 @@ export default {
     init_map: function(pos) {
       const loc_me = {
         editable: true,
-        name: 'it\'s me',
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
       };
       this.PUT_LOC_ME(loc_me);
 
@@ -128,12 +126,12 @@ export default {
         const center = this.map.getCenter();
         const scope = bounds.getNorthEast().lat() - bounds.getSouthWest().lat();
 
-        const reqFilter = {
+        const filter = {
           scope: Math.floor(100000*scope),
           lng: center.lng(),
           lat: center.lat(),
         };
-        this.SET_FILTER(reqFilter).then(() => {
+        this.SET_FILTER(filter).then(() => {
           return this.GET_FILTER(this.FILTER);
         }).then(() => {
           console.log(this.LOCS);
@@ -148,23 +146,21 @@ export default {
       };
       this.PUT_LOC_NEW(loc_new);
       this.add_marker_new(loc_new);
-
       this.$router.push({
-        path: `/map/new/?tobject=Event&lat=${loc_new.lat}&lng=${loc_new.lng}`
+        path: `/map/new/?tobject=Event&lat=${loc_new.lat}&lng=${loc_new.lng}`,
       });
     },
 
     add_marker_me: function(loc_me) {
-      console.log('## my loc marker');
-      const marker = new google.maps.Marker({
-        title: loc_me.name,
-        position: { lat: loc_me.latitude, lng: loc_me.longitude },
+      this.marker_me = new google.maps.Marker({
+        position: { lat: loc_me.lat, lng: loc_me.lng },
         draggable: false,
         animation: google.maps.Animation.mo,
         map: this.map,
       });
-      marker.addListener('click', () => this.$router.push({ path:'/map/me' }));
-      this.marker_me = marker;
+      this.marker_me.addListener('click', () => this.$router.push({
+        path: `/map/me/?tobject=User&lat=${loc_me.lat}&lng=${loc_me.lng}`,
+      }));
     },
 
     add_marker_new: function(loc_new) {
@@ -172,17 +168,15 @@ export default {
         this.marker_new.setMap(null);
       }
 
-      const marker = new google.maps.Marker({
+      this.marker_new = new google.maps.Marker({
         position: { lat: loc_new.lat, lng: loc_new.lng },
         draggable: true,
         animation: google.maps.Animation.mo,
         map: this.map,
       });
-      marker.addListener('click', () => this.$router.push({
-        path:`/map/new/?tobject=Event&lat=${loc_new.lat}&lng=${loc_new.lng}`
+      this.marker_new.addListener('click', () => this.$router.push({
+        path: `/map/new/?tobject=Event&lat=${loc_new.lat}&lng=${loc_new.lng}`,
       }));
-
-      this.marker_new = marker;
     },
   },
 }
