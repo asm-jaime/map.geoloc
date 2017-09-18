@@ -1,20 +1,15 @@
 // points
-export const SET_POINTS = "SET_POINTS"
-export const PUT_POINT = "PUT_POINT"
-export const DEL_POINT = "DEL_POINT"
+export const SET_LOCS = 'SET_LOCS';
+export const PUT_LOC = 'PUT_LOC';
+export const DEL_LOC = 'DEL_LOC';
 
 // filter
-export const SET_FILTER = "SET_FILTER"
-// tags
-export const SET_TAGS = "SET_TAGS"
+export const SET_FILTER = 'SET_FILTER';
+export const SET_TAGS = 'SET_TAGS';
 
-export const CLEAN_POINTS = "CLEAN_POINTS"
-
-// new point
-export const PUT_NEW_POINT = 'PUT_NEW_POINT';
-
-// my point
-export const PUT_MY_POINT = 'PUT_MY_POINT';
+export const CLEAN_LOCS = 'CLEAN_LOCS';
+export const PUT_LOC_NEW = 'PUT_LOC_NEW';
+export const PUT_LOC_ME = 'PUT_LOC_ME';
 
 // filter
-// export const SET_FILTER = "SET_FILTER"
+// export const SET_FILTER = 'SET_FILTER'

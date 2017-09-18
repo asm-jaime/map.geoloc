@@ -7,150 +7,145 @@ import * as gets from './constants/types.getters.js';
 
 import * as gen from './api/api.gens.js';
 
-import * as api_point from './api/api.points.js';
+import * as api_loc from './api/api.locs.js';
 
 Vue.use(Vuex);
 
 const state = {//{{{
-  my_point: {
-    pic: '',
-    name: '',
-    text: '',
-    token: '',
+  loc_new: {
+    id: '',
+    tobject: '',
+    lat: 0.0, lng: 0.0,
     editable: true,
-    tobject: 'User',
-    time: '',
-    latitude: 0.0,
-    longitude: 0.0,
   },
-  point: {
-    Id: '',
-    Pic: '',
-    Name: '',
-    Text: '',
-    Tags: [],
-    TObject: 'User',
-    Editable: true,
-    lat: 0.0,
-    lng: 0.0,
+  loc_me: {
+    id: '',
+    tobject: 'User',
+    lat: 0.0, lng: 0.0,
+    editable: true,
+  },
+  loc: {
+    id: '',
+    tobject: '',
+    lat: 0.0, lng: 0.0,
+    editable: true,
   },
   filter: {
+    tgeos: 'loc',
     tobject: 'User',
-    tgeos: 'Point',
     ttime: 'Any',
-    tags: ['whoredom'],
     scope: 0,
-    lng: 0,
-    lat: 0,
+    tags: ['whoredom'],
+    lng: 0, lat: 0,
   },
-  points: [],
+  locs: [],
   error: { status: 0, message: '' },
 };//}}}
 
 const mutations = { //{{{
-  [muts.SET_POINTS](state, points) {
-    state.points = points;
+  [muts.SET_LOCS](state, locs) {
+    state.locs = locs;
   },
-  [muts.PUT_POINT](state, point) {
-    const index = state.points.findIndex((e) => e.id === point.id);
+  [muts.PUT_LOC](state, loc) {
+    const index = state.locs.findIndex((elem) => elem.id === loc.id);
     if (index > -1) {
-      state.points.splice(index, 1, point);
+      state.locs.splice(index, 1, loc);
     } else {
-      state.points.unshift(point);
+      state.locs.unshift(loc);
     }
   },
-  [muts.DEL_POINT](state, point) {
-    const index = state.points.findIndex((e) => e._id === point.id);
+  [muts.DEL_LOC](state, loc) {
+    const index = state.locs.findIndex((elem) => elem._id === loc.id);
     if (index > -1) {
-      state.points.splice(index, 1);
+      state.locs.splice(index, 1);
     } else {
-      console.log('can not delete point: ', point);
+      console.log('can not delete loc: ', loc);
     }
   },
 
   [muts.SET_TAGS](state) {
-    state.new_point.tags = gen.get_tags(state.new_point.text);
+    state.loc_new.tags = gen.get_tags(state.loc_new.text);
   },
   [muts.SET_FILTER](state, filter) {
     state.filter = { ...state.filter, ...filter };
   },
 
 
-  [muts.CLEAN_POINTS](state) {
-    state.points = [];
+  [muts.CLEAN_LOCS](state) {
+    state.locs = [];
   },
-  [muts.PUT_NEW_POINT](state, new_point) {
-    state.new_point = { ...state.new_point, ...new_point };
+  [muts.PUT_LOC_NEW](state, loc_new) {
+    state.loc_new = { ...state.loc_new, ...loc_new };
   },
-  [muts.PUT_MY_POINT](state, my_point) {
-    state.my_point = { ...state.my_point, ...my_point };
+  [muts.PUT_LOC_ME](state, loc_me) {
+    state.loc_me = { ...state.loc_me, ...loc_me };
   },
 }; //}}}
 
 const actions = { //{{{
-  [acts.GET_POINT]({ commit }, point) {
-    return api_point.resRndPoint.get({}, point).then(res => {
+  [acts.GET_LOC]({ commit }, loc) {
+    return api_loc.resRndLoc.get({}, loc).then((res) => {
       // console.log('## res: ', res.data.body);
       if (res.status === 200) {
-        commit(muts.PUT_POINT, res.data.body);
+        commit(muts.PUT_LOC, res.data.body);
       } else {
-        throw new Error('can\'t get this point');
+        throw new Error('can\'t get this loc');
       }
     });
   },
-  [acts.PST_POINT]({ commit }, point) { // 
-    return api_point.resPoints.save({}, point).then(res => {
+  [acts.PST_LOC]({ commit }, loc) {
+    return api_loc.resLocs.save({}, loc).then((res) => {
       if (res.status === 200) {
-        commit(muts.PUT_POINT, res.data.body);
+        commit(muts.PUT_LOC, res.data.body);
       } else {
-        throw new Error('can\'t post this point');
+        throw new Error('can\'t post this loc');
       }
     });
   },
-  [acts.PUT_POINT]({ commit }, point) {
-    return api_point.resPoints.update({}, point).then(res => {
+  [acts.PUT_LOC]({ commit }, loc) {
+    return api_loc.resLocs.update({}, loc).then((res) => {
       if (res.status === 200) {
-        commit(muts.PUT_POINT, res.data.body);
+        commit(muts.PUT_LOC, res.data.body);
       } else {
-        throw new Error('can\'t post this point');
+        throw new Error('can\'t post this loc');
       }
     });
   },
-  [acts.DEL_POINT]({ commit }, point) {
-    return api_point.resPoints.remove({}, { _id: point.id }).then(res => {
+  [acts.DEL_LOC]({ commit }, loc) {
+    return api_loc.resLocs.remove({}, loc).then((res) => {
       if (res.status === 200) {
-        commit(muts.DEL_POINT, point);
+        commit(muts.DEL_LOC, loc);
       } else {
-        throw new Error('can\'t deleted this point');
+        throw new Error('can\'t deleted this loc');
       }
     });
   },
 
-  [acts.GET_RND_POINTS]({ commit }) {
-    return api_point.resRndPoint.get().then(res => {
+  [acts.GET_LOC_RND]({ commit }) {
+    return api_loc.resRndLoc.get().then((res) => {
       if (res.status === 200) {
-        commit(muts.SET_POINTS, res.data.body);
+        commit(muts.SET_LOCS, res.data.body);
       } else {
-        throw new Error('can\'t get rnd points');
+        throw new Error('can\'t get rnd locs');
       }
     });
   },
-  [acts.GET_ALL_POINTS]({ commit }) {
-    return api_point.resAllPoint.get().then(res => {
+  [acts.GET_LOC_ALL]({ commit }) {
+    return api_loc.resAllLoc.get().then((res) => {
       if (res.status === 200) {
-        commit(muts.SET_POINTS, res.data.body);
+        commit(muts.SET_LOCS, res.data.body);
       } else {
-        throw new Error('can\'t get all points');
+        throw new Error('can\'t get all locs');
       }
     });
   },
-  [acts.GET_NEAR_POINTS]({ commit }, reqNear) {
+  [acts.GET_LOC_NEAR]({ commit }, reqNear) {
     console.log(reqNear);
-    return api_point.resNearPoint.get(reqNear).then(res => {
+    return api_loc.resNearLoc.get(reqNear).then((res) => {
       if (res.status === 200) {
-        commit(muts.SET_POINTS, res.data.body);
+        commit(muts.SET_LOCS, res.data.body);
       } else {
-        throw new Error('can\'t get near points');
+        throw new Error('can\'t get near locs');
       }
     });
   },
@@ -160,36 +155,34 @@ const actions = { //{{{
   },
   [acts.GET_FILTER]({ commit }, reqFilter) {
     console.log(reqFilter);
-    return api_point.resFilterPoint.get(reqFilter).then(res => {
+    return api_loc.resFilterLoc.get(reqFilter).then((res) => {
       if (res.status === 200) {
-        commit(muts.SET_POINTS, res.data.body);
+        commit(muts.SET_LOCS, res.data.body);
       } else {
-        throw new Error('can\'t get filtered points');
+        throw new Error('can\'t get filtered locs');
       }
     });
   },
-
   [acts.SET_TAGS]({ commit }) {
     commit(muts.SET_TAGS);
   },
-
-  [acts.PUT_NEW_POINT]({ commit }, new_point) {
-    commit(muts.PUT_NEW_POINT, new_point);
+  [acts.PUT_LOC_NEW]({ commit }, loc_new) {
+    commit(muts.PUT_LOC_NEW, loc_new);
   },
-  [acts.PUT_MY_POINT]({ commit }, my_point) {
-    commit(muts.PUT_MY_POINT, my_point);
+  [acts.PUT_LOC_ME]({ commit }, loc_me) {
+    commit(muts.PUT_LOC_ME, loc_me);
   },
 }; //}}}
 
 const getters = { //{{{
-  [gets.POINTS](state) {
-    return state.points;
+  [gets.LOCS](state) {
+    return state.locs;
   },
-  [gets.NEW_POINT](state) {
-    return state.new_point;
+  [gets.LOC_NEW](state) {
+    return state.loc_new;
   },
-  [gets.MY_POINT](state) {
-    return state.my_point;
+  [gets.LOC_ME](state) {
+    return state.loc_me;
   },
   [gets.FILTER](state) {
     return state.filter;

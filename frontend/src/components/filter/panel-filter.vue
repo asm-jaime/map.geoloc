@@ -17,7 +17,7 @@
       </div>
       </template>
       <div class="col" style="padding-right: 31px">
-        <b-btn variant="primary" @click="getFilter">get it</b-btn>
+        <b-btn variant="primary" @click="get_filter">get it</b-btn>
       </div>
     </b-button-group>
   </div>
@@ -33,35 +33,39 @@ import { mapGetters, mapActions } from 'vuex';
 import * as types from '../../constants/types.some.js';
 import * as acts from '../../constants/types.actions.js';
 import * as gets from '../../constants/types.getters.js';
+
 export default {
   name: 'PanelFilter',
   components: {
     FilterTag,
   },
-  data(){//{{{
+  data() {
     return {
       tobjects: [],
       tgeoses: [],
       ttimes: [],
     }
-  },//}}}
-  mounted: function() {//{{{
+  },
+
+  mounted: function() {
     this.tobjects = types.TYPE_OBJECT;
     this.tgeoses = types.TYPE_GEOS;
     this.ttimes = types.TYPE_TIME;
-  },//}}}
-  computed: {
-    ...mapGetters([//{{{
-      gets.FILTER,
-      gets.POINTS,
-    ]),//}}}
   },
+
+  computed: {
+    ...mapGetters([
+      gets.FILTER,
+      gets.LOCS,
+    ]),
+  },
+
   methods: {
-    ...mapActions([//{{{
+    ...mapActions([
       acts.GET_FILTER,
       acts.SET_FILTER,
-    ]),//}}}
-    getFilter() {//{{{
+    ]),
+    get_filter() {
       const reqFilter = {
         tgeos: this.FILTER.tgeos,
         tobject: this.FILTER.tobject,
@@ -72,19 +76,20 @@ export default {
       this.SET_FILTER(reqFilter).then(() => {
         return this.GET_FILTER(this.FILTER);
       }).then(() => {
-        console.log("get filter:", this.POINTS);
+        console.log("get filter:", this.LOCS);
       });
-    },//}}}
-    clearFilter() {//{{{
-    },//}}}
-    close() {//{{{
-      this.$router.push({path:`/map`});
-    },//}}}
-    tag() {//{{{
+    },
+    clearFilter() {
+    },
+    close() {
+      this.$router.push({ path:'/map' });
+    },
+    tag() {
       console.log('tags', this.tag);
-    },//}}}
+    },
   },
 }
+
 </script>
 
 <style>

@@ -1,12 +1,12 @@
 <template>
-  <div class="panel-point">
-    <b-card class="mb-1">token: {{ MY_POINT.token }}</b-card>
-    <b-card class="mb-1">type: {{ MY_POINT.type }}</b-card>
+  <div class="panel-loc">
+    <b-card class="mb-1">token: {{ LOC_ME.token }}</b-card>
+    <b-card class="mb-1">type: {{ LOC_ME.type }}</b-card>
     <b-card class="mb-1">
-      <div>lat: {{ MY_POINT.latitude }}</div>
-      <div>lng: {{ MY_POINT.longitude }}</div>
+      <div>lat: {{ LOC_ME.latitude }}</div>
+      <div>lng: {{ LOC_ME.longitude }}</div>
     </b-card>
-    <div v-model="MY_POINT.token"></b-card>
+    <div v-model="LOC_ME.token"></b-card>
     </div>
     <div class="row justify-content-end" style="padding-right: 16px">
       <b-button @click="close" :size="lg"
@@ -22,19 +22,19 @@ import * as gets from '../../constants/types.getters.js';
 import * as acts from '../../constants/types.actions.js';
 
 export default {
-  name: 'MyPoint',
+  name: 'LocMe',
   data(){
     return {
     }
   },
 
   mounted: function() {
-    console.log(this.MY_POINT);
+    console.log(this.LOC_ME);
   },
 
   computed: {
     ...mapGetters([
-      gets.MY_POINT,
+      gets.LOC_ME,
     ]),
   },
 

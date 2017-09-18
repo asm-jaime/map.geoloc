@@ -7,11 +7,11 @@ import 'bootstrap-vue/dist/bootstrap-vue.css';
 
 import App from './components/app.vue';
 
-import MainMap from './components/layouts/main-map.vue';
+import MapGoogle from './components/layouts/map-google.vue';
 
-import PanelPoint from './components/points/panel-point.vue';
-import PanelEditPoint from './components/points/panel-edit-point.vue';
-import PanelMyPoint from './components/points/panel-my-point.vue';
+import PanelLoc from './components/location/panel-loc.vue';
+import PanelLocEdit from './components/location/panel-loc-edit.vue';
+import PanelLocMe from './components/location/panel-loc-me.vue';
 
 import store from './store.js';
 
@@ -24,11 +24,27 @@ const router = new VueRouter({
   base: __dirname,
   routes: [
     {path: '/', redirect: '/map'},
-    {path: '/map', component: MainMap, children: [
-      {path: 'new', component: PanelEditPoint},
-      {path: 'my', component: PanelMyPoint},
-      {path: ':id', component: PanelPoint},
-      {path: ':id/edit', component: PanelEditPoint},
+    {path: '/map', component: MapGoogle, children: [
+      {path: 'me', component: PanelLocMe},
+      {path: ':id', component: PanelLoc},
+      {path: ':id/edit',
+        props: (route) => {
+          return {
+            tobject: route.query.tobject,
+            lat: route.query.lat,
+            lng: route.query.lng,
+          };
+        },
+        component: PanelLocEdit},
+      {path: 'new', component: PanelLocEdit,
+        props: (route) => {
+          return {
+            tobject: route.query.tobject,
+            lat: route.query.lat,
+            lng: route.query.lng,
+          };
+        },
+      },
     ]},
   ]
 });

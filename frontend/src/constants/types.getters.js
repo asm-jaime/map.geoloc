@@ -1,6 +1,6 @@
-export const POINTS = 'POINTS';
+export const LOCS = 'LOCS';
 
-export const MY_POINT = 'MY_POINT';
-export const NEW_POINT = 'NEW_POINT';
+export const LOC_ME = 'LOC_ME';
+export const LOC_NEW = 'LOC_NEW';
 
 export const FILTER = 'FILTER';

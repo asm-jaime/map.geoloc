@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div class="main-panel">
+    <div class="panel-main">
       <b-navbar toggleable type="inverse"
         variant="inverse" class="dvi-navbar collapse">
         <b-collapse isNav id="nav_collapse">
@@ -13,11 +13,14 @@
               <router-link to="/">
                 <b-nav-item>home</b-nav-item>
               </router-link>
+              <router-link to="/map">
+                <b-nav-item>map</b-nav-item>
+              </router-link>
               <router-link to="/events">
                 <b-nav-item>events</b-nav-item>
               </router-link>
-              <router-link to="/map">
-                <b-nav-item>map</b-nav-item>
+              <router-link to="/info">
+                <b-nav-item>info</b-nav-item>
               </router-link>
             </b-nav>
             </div>
@@ -41,7 +44,7 @@
 </template>
 
 <script>
-import PanelFilter from './general/panel-filter.vue'
+import PanelFilter from './filter/panel-filter.vue'
 
 export default {
   components: { PanelFilter },
