@@ -1,14 +1,14 @@
 import Vue from 'vue';
 import VueResource from 'vue-resource';
 
-import {LOCS as api_loc} from '../constants/paths.api.js';
+import {LOCS as api_loc} from '../constants/api.paths.js';
 
 Vue.use(VueResource);
 
 Vue.http.options.crossOrigin = true;
 // Vue.http.options.credentials = true
 
-export const resLocs = Vue.resource(api_loc.LOCS);
+export const resLocs = Vue.resource(api_loc.LOC);
 export const resRndLoc = Vue.resource(api_loc.RND);
 export const resAllLoc = Vue.resource(api_loc.ALL);
 export const resNearLoc = Vue.resource(api_loc.NEAR);

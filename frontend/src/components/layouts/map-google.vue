@@ -58,7 +58,6 @@ export default {
       acts.GET_LOC_RND,
       acts.GET_LOC_NEAR,
       acts.PUT_LOC_ME,
-      acts.PUT_LOC_NEW,
       acts.GET_FILTER,
       acts.SET_FILTER,
     ]),
@@ -74,6 +73,7 @@ export default {
       }
 
       // set locs to map
+      console.log('map_loc: ', locs);
       for(let i = 0; i < locs.length; i++){
         setTimeout(()=> {
           const marker = new google.maps.Marker({
@@ -90,8 +90,8 @@ export default {
           marker.addListener('click',
             () => this.$router.push({
               path: `/map/${locs[i].Id}/?tobject=${locs[i].TObject}`+
-              `&lat=${locs[i].Location.coordinates[0]}`+
-              `&lng=${locs[i].Location.coordinates[1]}`,
+              `&lng=${locs[i].Location.coordinates[0]}`+
+              `&lat=${locs[i].Location.coordinates[1]}`,
             }));
           this.markers.push(marker);
         }, 200*i);
@@ -107,8 +107,8 @@ export default {
     init_map: function(pos) {
       const loc_me = {
         editable: true,
-        lat: pos.coords.latitude,
         lng: pos.coords.longitude,
+        lat: pos.coords.latitude,
       };
       this.PUT_LOC_ME(loc_me);
 
@@ -141,19 +141,18 @@ export default {
 
     add_marker: function(elem) {
       const loc_new = {
-        lat: elem.latLng.lat(),
         lng: elem.latLng.lng(),
+        lat: elem.latLng.lat(),
       };
-      this.PUT_LOC_NEW(loc_new);
       this.add_marker_new(loc_new);
       this.$router.push({
-        path: `/map/new/?tobject=Event&lat=${loc_new.lat}&lng=${loc_new.lng}`,
+        path: `/map/new/?tobject=Event&lng=${loc_new.lng}&lat=${loc_new.lat}`,
       });
     },
 
     add_marker_me: function(loc_me) {
       this.marker_me = new google.maps.Marker({
-        position: { lat: loc_me.lat, lng: loc_me.lng },
+        position: { lng: loc_me.lng, lat: loc_me.lat },
         draggable: false,
         animation: google.maps.Animation.mo,
         map: this.map,
@@ -169,7 +168,7 @@ export default {
       }
 
       this.marker_new = new google.maps.Marker({
-        position: { lat: loc_new.lat, lng: loc_new.lng },
+        position: { lng: loc_new.lng, lat: loc_new.lat },
         draggable: true,
         animation: google.maps.Animation.mo,
         map: this.map,

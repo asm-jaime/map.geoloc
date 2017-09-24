@@ -8,8 +8,4 @@ export const SET_FILTER = 'SET_FILTER';
 export const SET_TAGS = 'SET_TAGS';
 
 export const CLEAN_LOCS = 'CLEAN_LOCS';
-export const PUT_LOC_NEW = 'PUT_LOC_NEW';
 export const PUT_LOC_ME = 'PUT_LOC_ME';
-
-// filter
-// export const SET_FILTER = 'SET_FILTER'

@@ -8,34 +8,24 @@ import * as gets from './constants/types.getters.js';
 import * as gen from './api/api.gens.js';
 
 import * as api_loc from './api/api.locs.js';
+import * as api_user from './api/api.users.js';
+import * as api_event from './api/api.events.js';
 
 Vue.use(Vuex);
 
 const state = {//{{{
-  loc_new: {
-    id: '',
-    tobject: '',
-    lat: 0.0, lng: 0.0,
-    editable: true,
-  },
   loc_me: {
     id: '',
     tobject: 'User',
     lat: 0.0, lng: 0.0,
     editable: true,
   },
-  loc: {
-    id: '',
-    tobject: '',
-    lat: 0.0, lng: 0.0,
-    editable: true,
-  },
   filter: {
-    tgeos: 'loc',
-    tobject: 'User',
+    tgeos: '',
+    tobject: 'Any',
     ttime: 'Any',
     scope: 0,
-    tags: ['whoredom'],
+    tags: [],
     lng: 0, lat: 0,
   },
   locs: [],
@@ -47,7 +37,8 @@ const mutations = { //{{{
     state.locs = locs;
   },
   [muts.PUT_LOC](state, loc) {
-    const index = state.locs.findIndex((elem) => elem.id === loc.id);
+    if(state.locs === null) state.locs = [];
+    const index = state.locs.findIndex((elem) => elem._id === loc._id);
     if (index > -1) {
       state.locs.splice(index, 1, loc);
     } else {
@@ -55,7 +46,7 @@ const mutations = { //{{{
     }
   },
   [muts.DEL_LOC](state, loc) {
-    const index = state.locs.findIndex((elem) => elem._id === loc.id);
+    const index = state.locs.findIndex((elem) => elem._id === loc._id);
     if (index > -1) {
       state.locs.splice(index, 1);
     } else {
@@ -70,12 +61,8 @@ const mutations = { //{{{
     state.filter = { ...state.filter, ...filter };
   },
 
-
   [muts.CLEAN_LOCS](state) {
     state.locs = [];
-  },
-  [muts.PUT_LOC_NEW](state, loc_new) {
-    state.loc_new = { ...state.loc_new, ...loc_new };
   },
   [muts.PUT_LOC_ME](state, loc_me) {
     state.loc_me = { ...state.loc_me, ...loc_me };
@@ -139,9 +126,9 @@ const actions = { //{{{
       }
     });
   },
-  [acts.GET_LOC_NEAR]({ commit }, reqNear) {
-    console.log(reqNear);
-    return api_loc.resNearLoc.get(reqNear).then((res) => {
+  [acts.GET_LOC_NEAR]({ commit }, near) {
+    // console.log(near);
+    return api_loc.resNearLoc.get(near).then((res) => {
       if (res.status === 200) {
         commit(muts.SET_LOCS, res.data.body);
       } else {
@@ -150,12 +137,35 @@ const actions = { //{{{
     });
   },
 
-  [acts.SET_FILTER]({ commit }, reqFilter) {
-    commit(muts.SET_FILTER, reqFilter);
+  [acts.PUT_USER]({ commit }, user) {
+    return api_user.resUsers.update({}, user).then((res) => {
+      if (res.status === 200) {
+
+        console.log('put user complete: ', res.data.body);
+        return res.data.body;
+      } else {
+        throw new Error('can\'t post this loc');
+      }
+    });
   },
-  [acts.GET_FILTER]({ commit }, reqFilter) {
-    console.log(reqFilter);
-    return api_loc.resFilterLoc.get(reqFilter).then((res) => {
+
+  [acts.PUT_EVENT]({ commit }, event) {
+    return api_user.resUsers.update({}, event).then((res) => {
+      if (res.status === 200) {
+        console.log('put user complete: ', res.data.body);
+        return res.data.body;
+      } else {
+        throw new Error('can\'t post this loc');
+      }
+    });
+  },
+
+  [acts.SET_FILTER]({ commit }, filter) {
+    commit(muts.SET_FILTER, filter);
+  },
+  [acts.GET_FILTER]({ commit }, filter) {
+    // console.log(filter);
+    return api_loc.resFilterLoc.get(filter).then((res) => {
       if (res.status === 200) {
         commit(muts.SET_LOCS, res.data.body);
       } else {
@@ -166,9 +176,6 @@ const actions = { //{{{
   [acts.SET_TAGS]({ commit }) {
     commit(muts.SET_TAGS);
   },
-  [acts.PUT_LOC_NEW]({ commit }, loc_new) {
-    commit(muts.PUT_LOC_NEW, loc_new);
-  },
   [acts.PUT_LOC_ME]({ commit }, loc_me) {
     commit(muts.PUT_LOC_ME, loc_me);
   },
@@ -176,10 +183,8 @@ const actions = { //{{{
 
 const getters = { //{{{
   [gets.LOCS](state) {
+    if(state.locs === null) state.locs = [];
     return state.locs;
-  },
-  [gets.LOC_NEW](state) {
-    return state.loc_new;
   },
   [gets.LOC_ME](state) {
     return state.loc_me;

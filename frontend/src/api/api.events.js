@@ -1,7 +1,8 @@
 import Vue from 'vue';
 import VueResource from 'vue-resource';
+import {EVENTS as api_event} from '../constants/api.paths.js';
 
 Vue.use(VueResource);
+Vue.http.options.crossOrigin = true;
 
-const eventsResource = Vue.resource('http://localhost:3000/api/v1/events/{id}');
-export { eventsResource };
+export const resEvents = Vue.resource(api_event.EVENT);

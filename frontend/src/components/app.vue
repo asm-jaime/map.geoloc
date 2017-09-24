@@ -16,8 +16,8 @@
               <router-link to="/map">
                 <b-nav-item>map</b-nav-item>
               </router-link>
-              <router-link to="/events">
-                <b-nav-item>events</b-nav-item>
+              <router-link to="/table">
+                <b-nav-item>table</b-nav-item>
               </router-link>
               <router-link to="/info">
                 <b-nav-item>info</b-nav-item>

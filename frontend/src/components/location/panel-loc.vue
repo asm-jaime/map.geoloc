@@ -3,8 +3,8 @@
     <b-card class="mb-1">id: {{ id }}</b-card>
     <b-card class="mb-1">type: {{ tobject }}</b-card>
     <b-card class="mb-1">
-      <div>lat: {{ lat }}</div>
       <div>lng: {{ lng }}</div>
+      <div>lat: {{ lat }}</div>
     </b-card>
     <div class="row justify-content-end" style="padding-right: 16px">
       <b-button @click="edit_loc" :size="lg"
@@ -24,7 +24,7 @@ import { mapGetters, mapActions } from 'vuex';
 
 export default {
   name: 'Loc',
-  props: ['id', 'tobject', 'lat', 'lng'],
+  props: ['id', 'tobject', 'lng', 'lat'],
 
   mounted: function() {
   },
@@ -39,7 +39,7 @@ export default {
     edit_loc() {
       this.$router.push({
         path: `/map/${this.$route.params.id}/edit?`+
-              `tobject=${this.tobject}&lat=${this.lat}&lng=${this.lng}`,
+              `tobject=${this.tobject}&lng=${this.lng}&lat=${this.lat}`,
       });
     },
     close() {

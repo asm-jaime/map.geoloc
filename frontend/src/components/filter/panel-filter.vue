@@ -42,14 +42,12 @@ export default {
   data() {
     return {
       tobjects: [],
-      tgeoses: [],
       ttimes: [],
     }
   },
 
   mounted: function() {
     this.tobjects = types.TYPE_OBJECT;
-    this.tgeoses = types.TYPE_GEOS;
     this.ttimes = types.TYPE_TIME;
   },
 
@@ -63,23 +61,15 @@ export default {
   methods: {
     ...mapActions([
       acts.GET_FILTER,
-      acts.SET_FILTER,
     ]),
     get_filter() {
-      const reqFilter = {
-        tgeos: this.FILTER.tgeos,
-        tobject: this.FILTER.tobject,
-        ttime: this.FILTER.ttime,
-        tags: this.FILTER.tags,
-      };
-      console.log("reqFilter: ",reqFilter);
-      this.SET_FILTER(reqFilter).then(() => {
-        return this.GET_FILTER(this.FILTER);
-      }).then(() => {
+      console.log("filter: ", this.FILTER);
+      this.GET_FILTER(this.FILTER)
+        .then(() => {
         console.log("get filter:", this.LOCS);
       });
     },
-    clearFilter() {
+    clear() {
     },
     close() {
       this.$router.push({ path:'/map' });
