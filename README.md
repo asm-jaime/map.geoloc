@@ -5,3 +5,5 @@ map.geoloc is a project implementing mass geo-positioning.
 
 #### Why?
 ..
+
+#### Quick start
