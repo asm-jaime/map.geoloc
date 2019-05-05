@@ -1,7 +1,7 @@
 package model
 
 import (
-	"errors"
+	// "errors"
 	"fmt"
 	"time"
 
@@ -216,11 +216,15 @@ func (mongo *MongoDB) GetUser(user *User) (guser User, err error) { // {{{
 	defer session.Close()
 
 	if user.Email != "" {
-		err = session.DB(mongo.Database).C("dviUsers").Find(bson.M{"email": user.Email}).One(&user)
+		err = session.DB(mongo.Database).C("dviUsers").Find(bson.M{
+			"email": user.Email,
+		}).One(&user)
 		return guser, err
 	}
 	if user.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{"_id": user.Id}).One(&guser)
+		err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{
+			"_id": user.Id,
+		}).One(&guser)
 		return guser, err
 	}
 	return guser, err
@@ -230,9 +234,7 @@ func (mongo *MongoDB) PostUser(user *User) (err error) { // {{{
 	session := mongo.Session.Clone()
 
 	defer session.Close()
-	if _, err := mongo.GetUser(user); err == nil {
-		return errors.New("User already exists!")
-	}
+	user.Id = bson.NewObjectId()
 
 	err = session.DB(mongo.Database).C("dviUsers").Insert(&user)
 	return err
@@ -273,8 +275,9 @@ func (mongo *MongoDB) GetEvent(event *Event) (gevent Event, err error) { // {{{
 	defer session.Close()
 
 	if event.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{"_id": event.Id}).One(&gevent)
-		return gevent, err
+		err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{
+			"_id": event.Id,
+		}).One(&gevent)
 	}
 	return gevent, err
 } // }}}
@@ -303,7 +306,7 @@ func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	err = session.DB(mongo.Database).C("dviLocations").Update(
+	err = session.DB(mongo.Database).C("dviEvents").Update(
 		bson.M{"_id": event.Id}, &event)
 	return err
 } // }}}
@@ -434,7 +437,8 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 			"maxDistance":   filter.Scope,
 		},
 	})
-	if len(filter.TObject) > 0 {
+
+	if filter.TObject != "" && filter.TObject != "Any" {
 		params = append(params, bson.M{
 			"$match": bson.M{
 				"tobject": filter.TObject,
@@ -443,6 +447,7 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 	}
 
 	if filter.TObject == "Event" {
+		//{{{
 		params = append(params, bson.M{
 			"$lookup": bson.M{
 				"from":         "dviEvents",
@@ -466,7 +471,7 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 			})
 		}
 		// Recently, Today, Yesterday, Week, Month
-		if filter.TTime != "" {
+		if filter.TTime != "" && filter.TTime != "Any" {
 			date_start, date_end := wordToDate(filter.TTime)
 			params = append(params, bson.M{
 				"$match": bson.M{
@@ -485,7 +490,9 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 				"location":  1,
 			},
 		})
+		//}}}
 	} else if filter.TObject == "User" {
+		// {{{
 		params = append(params, bson.M{
 			"$lookup": bson.M{
 				"from":         "dviUsers",
@@ -518,10 +525,11 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 				"location": 1,
 			},
 		})
+		//}}}
 	}
 
-	//fmt.Println(params)
 	err = session.DB(mongo.Database).C("dviLocations").Pipe(params).All(&elocs)
+	fmt.Println(elocs)
 	return elocs, err
 }
 

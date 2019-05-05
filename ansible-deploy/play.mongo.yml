@@ -1,4 +1,0 @@
----
-- hosts: flagship
-  roles:
-    - role: mongodb

@@ -1,2 +1,0 @@
-- name: deploy backend
-  command: bash -lc "cd ../backend && go build"

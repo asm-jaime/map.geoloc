@@ -144,18 +144,18 @@ const actions = { //{{{
         console.log('put user complete: ', res.data.body);
         return res.data.body;
       } else {
-        throw new Error('can\'t post this loc');
+        throw new Error('can\'t post user');
       }
     });
   },
 
   [acts.PUT_EVENT]({ commit }, event) {
-    return api_user.resUsers.update({}, event).then((res) => {
+    return api_event.resEvents.update({}, event).then((res) => {
       if (res.status === 200) {
         console.log('put user complete: ', res.data.body);
         return res.data.body;
       } else {
-        throw new Error('can\'t post this loc');
+        throw new Error('can\'t post user');
       }
     });
   },
@@ -164,12 +164,12 @@ const actions = { //{{{
     commit(muts.SET_FILTER, filter);
   },
   [acts.GET_FILTER]({ commit }, filter) {
-    // console.log(filter);
+    console.log('acts.GET_FILTER: ', filter);
     return api_loc.resFilterLoc.get(filter).then((res) => {
       if (res.status === 200) {
         commit(muts.SET_LOCS, res.data.body);
       } else {
-        throw new Error('can\'t get filtered locs');
+        throw new Error('can\'t get filter');
       }
     });
   },

@@ -84,8 +84,10 @@ func PutUser(c *gin.Context) { // {{{
 		c.JSON(http.StatusInternalServerError,
 			gin.H{"msg": "can't connect to db", "body": nil})
 	}
+
 	var req md.User
 	err := c.Bind(&req)
+
 	if err != nil {
 		c.JSON(http.StatusBadRequest,
 			gin.H{"msg": err.Error(), "body": nil})
@@ -100,6 +102,7 @@ func PutUser(c *gin.Context) { // {{{
 			return
 		}
 	} else {
+		fmt.Println("no id and post user: ", req)
 		err = mongo.PostUser(&req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
@@ -148,9 +151,10 @@ func GetEvents(c *gin.Context) { // {{{
 	if err != nil {
 		c.JSON(http.StatusNotFound,
 			gin.H{"msg": "events not found", "body": nil})
+	} else {
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "get events successful complete", "body": req})
 	}
-	c.JSON(http.StatusOK,
-		gin.H{"msg": "get events successful complete", "body": req})
 } // }}}
 
 func GetEvent(c *gin.Context) { // {{{
@@ -197,10 +201,10 @@ func PostEvent(c *gin.Context) { // {{{
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			gin.H{"msg": err.Error(), "body": nil})
-		return
+	} else {
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "post event complete", "body": req})
 	}
-	c.JSON(http.StatusOK,
-		gin.H{"msg": "post event complete", "body": req})
 } // }}}
 
 func PutEvent(c *gin.Context) { // {{{
@@ -255,11 +259,10 @@ func DelEvent(c *gin.Context) { // {{{
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			gin.H{"msg": err.Error(), "body": nil})
-		return
+	} else {
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "del event complete", "body": req})
 	}
-
-	c.JSON(http.StatusOK,
-		gin.H{"msg": "del event complete", "body": req})
 } // }}}
 
 // ========== locations
@@ -324,10 +327,10 @@ func PostLoc(c *gin.Context) { // {{{
 	if err != nil {
 		c.JSON(http.StatusInternalServerError,
 			gin.H{"msg": err.Error(), "body": nil})
-		return
+	} else {
+		c.JSON(http.StatusOK,
+			gin.H{"msg": "post point complete", "body": point})
 	}
-
-	c.JSON(http.StatusOK, gin.H{"msg": "post point complete", "body": point})
 } // }}}
 
 func PutLoc(c *gin.Context) { // {{{

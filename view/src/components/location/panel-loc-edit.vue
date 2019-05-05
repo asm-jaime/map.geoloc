@@ -21,7 +21,7 @@
     </b-button-group>
 
     <div class="row justify-content-end" style="padding-right: 16px">
-      <b-button ref="btn_ok" @click="put" :size="lg"
+      <b-button ref="btn_ok" @click="put_object[tobject]" :size="lg"
         :variant="primary" href="" class="col-4">ok</b-button>
       <b-button ref="btn_del" @click="del_loc" :size="lg"
         :variant="primary" href="" class="col-4">delete</b-button>
@@ -43,12 +43,34 @@ import * as gets from '../../constants/types.getters.js';
 export default {
   name: 'LocEdit',
   props: ['id', 'tobject', 'editable', 'lat', 'lng'],
-  data(){
-    return {
-      put_object: { 'Event': this.PUT_EVENT, 'User': this.PUT_USER },
-      tobjects: [],
+  data(){//{{{
+    const loc = {
+      _id: this.id,
+      TObject: this.tobject,
+      Location: {
+        type: 'Point',
+        coordinates: [
+          parseFloat(this.lng),
+          parseFloat(this.lat),
+        ],
+      },
     };
-  },
+    const event = {
+      _id: '', name: '', text: '',
+      tags: [],
+    };
+    const user = {
+      _id: '', name: '', text: '',
+      tags: [],
+    };
+    return {
+      put_object: { 'Event': this.put_event, 'User': this.put_user },
+      tobjects: [],
+      event,
+      user,
+      loc,
+    };
+  },//}}}
 
   mounted: function() {
     this.tobjects = types.TYPE_OBJECT;
@@ -61,7 +83,7 @@ export default {
   },
 
   methods: {
-    ...mapActions([
+    ...mapActions([//{{{
       acts.PST_LOC,
       acts.PUT_LOC,
       acts.DEL_LOC,
@@ -71,34 +93,8 @@ export default {
       acts.PST_USER,
       acts.PUT_USER,
       acts.DEL_USER,
-    ]),
-    put_loc() {//{{{
-      const loc = {
-        _id: this.id,
-        TObject: this.tobject,
-        Location: {
-          type: 'Point',
-          coordinates: [
-            parseFloat(this.lng),
-            parseFloat(this.lat),
-          ],
-        },
-      };
-
-      console.log('put_loc: ', loc);
-      /*this.PUT_LOC(loc)
-        .then(() => {
-          return anime.blink_good(this.$refs.btn_ok);
-        })
-        .then(() => {
-          this.close();
-        })
-        .catch((err) => {
-          console.log(err);
-          anime.blink_err(this.$refs.btn_ok);
-        })*/
-    },//}}}
-    del_loc() {
+    ]),//}}}
+    del_loc() {//{{{
       const loc = { _id: this.id };
       this.DEL_LOC(loc)
         .then(() => {
@@ -111,20 +107,25 @@ export default {
           console.log(err);
           anime.blink_err(this.$refs.btn_del);
         });
+    },//}}}
+    put_event() {
+      this.PUT_EVENT(this.event)
+        .then((res) => {
+          const loc = this.loc;
+          loc._id = res._id;
+          console.log('loc: ',loc);
+          return this.PUT_LOC(loc);
+        })
+        .then((res) => {
+          console.log('put_loc: ', res);
+        })
+        .catch((err) => {
+          console.log(err);
+        })
+      //console.log(this.loc);
     },
-    put() {
-      const loc = {
-        _id: this.id,
-        TObject: this.tobject,
-        Location: {
-          type: 'Point',
-          coordinates: [
-            parseFloat(this.lng),
-            parseFloat(this.lat),
-          ],
-        },
-      };
-      this.put_object[this.tobject]();
+    put_user() {
+      console.log(this.user);
     },
     close() {
       this.$router.push({ path:'/map' });

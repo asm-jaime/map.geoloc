@@ -1,3 +1,0 @@
-# [localhost]
-localhost ansible_connection=local
-#flagship ansible_ssh_host=127.0.0.1 ansible_ ssh_port=22 ansible_ssh_user=root ansible_ssh_pass=password

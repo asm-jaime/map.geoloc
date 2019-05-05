@@ -27,10 +27,10 @@ type DistanceReq struct {
 type (
 	User struct {
 		Id     bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Name   string        `form:"name" binding:"required" bson:"name"`
-		Text   string        `form:"text" binding:"required" bson:"text"`
-		Tags   []string      `form:"tags" bson:"tags"`
-		Email  string        `form:"email" binding:"required" bson:"email"`
+		Name   string        `form:"name" bson:"name,omitempty"`
+		Text   string        `form:"text" bson:"text,omitempty"`
+		Tags   []string      `form:"tags" bson:"tags,omitempty"`
+		Email  string        `form:"email" bson:"email,omitempty"`
 		Events []mgo.DBRef   `form:"events" bson:"events,omitempty"`
 	}
 )
@@ -43,9 +43,9 @@ type (
 type (
 	Event struct {
 		Id        bson.ObjectId `form:"_id" bson:"_id,omitempty"`
-		Name      string        `form:"name" binding:"required" bson:"name"`
-		Text      string        `form:"text" bson:"text"`
-		Tags      []string      `form:"tags" bson:"tags"`
+		Name      string        `form:"name" bson:"name,omitempty"`
+		Text      string        `form:"text" bson:"text,omitempty"`
+		Tags      []string      `form:"tags" bson:"tags,omitempty"`
 		TTLEvent  time.Time     `form:"ttl" bson:"ttl,omitempty"`
 		Users     []mgo.DBRef   `form:"users" bson:"users,omitempty"`
 		Timestamp time.Time     `form:"timestamp" json:"timestamp,omitempty" bson:"timestamp,omitempty"`
@@ -94,11 +94,10 @@ type (
 	}
 
 	ReqFilter struct {
-		Scope   float64  `form:"scope" json:"scope,omitempty"`
-		Tags    []string `form:"tags" json:"tags,omitempty"`
-		TTime   string   `form:"ttime" json:"ttime,omitempty"`
-		TGeos   string   `form:"tgeos" json:"tgeos,omitempty"`
 		TObject string   `form:"tobject" json:"tobject,omitempty"`
+		Scope   float64  `form:"scope" json:"scope,omitempty"`
+		TTime   string   `form:"ttime" json:"ttime,omitempty"`
+		Tags    []string `form:"tags" json:"tags,omitempty"`
 		Lat     float64  `form:"lat" json:"lat,omitempty"`
 		Lng     float64  `form:"lng" json:"lng,omitempty"`
 	}
