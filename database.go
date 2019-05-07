@@ -1,8 +1,9 @@
-package model
+package main
 
 import (
 	// "errors"
 	"fmt"
+	"os"
 	"time"
 
 	mgo "gopkg.in/mgo.v2"
@@ -10,10 +11,9 @@ import (
 	"strings"
 )
 
-// ========== configure
+// ========== database init
 
-// MongoDB config struct
-type MongoDB struct {
+type mongoDB struct {
 	Host             string
 	Port             string
 	Addrs            string
@@ -26,86 +26,48 @@ type MongoDB struct {
 	Session          *mgo.Session
 }
 
-func (mongo *MongoDB) SetDefault() { // {{{
-	// host database params
-	mongo.Port = "27017"
-	mongo.Host = "localhost"
+func (mongo *mongoDB) setDefault() {
+	mongo.Port = os.Getenv("MONGO_PORT")
+	mongo.Host = os.Getenv("MONGO_HOST")
 	mongo.Addrs = mongo.Host + ":" + mongo.Port
-	// database
-	if mongo.Database == "" {
-		mongo.Database = "dviMongo"
-	}
-	// user for requests
-	mongo.Username = "jaime"
-	mongo.Password = "123456789"
-	// time live events
+	mongo.Database = os.Getenv("MONGO_NAME")
+	mongo.Username = os.Getenv("MONGO_USER")
+	mongo.Password = os.Getenv("MONGO_PASSWORD")
+
 	mongo.EventTTLAfterEnd = 1 * time.Second
 	mongo.StdEventTTL = 20 * time.Minute
+
 	mongo.Info = &mgo.DialInfo{
 		Addrs:    []string{mongo.Addrs},
-		Timeout:  3 * time.Second,
+		Timeout:  2 * time.Hour,
 		Database: mongo.Database,
 		Username: mongo.Username,
 		Password: mongo.Password,
 	}
-	err := mongo.SetSession()
+	err := mongo.setSession()
 	if err != nil {
-		panic("db does not allow")
+		panic("db connection does not exist")
 	}
-} // }}}
+}
 
-// ========== sessions
-
-func (mongo *MongoDB) SetSession() (err error) { // {{{
+func (mongo *mongoDB) setSession() (err error) {
 	mongo.Session, err = mgo.DialWithInfo(mongo.Info)
 	if err != nil {
 		mongo.Session, err = mgo.Dial(mongo.Host)
 	}
 	return err
-} // }}}
+}
 
-// ========== database init
-
-func (mongo *MongoDB) UpsertDefaultUser() (err error) { // {{{
+func (mongo *mongoDB) drop() {
 	session := mongo.Session.Clone()
 	defer session.Close()
+	session.DB(mongo.Database).C("dviUsers").DropCollection()
+	session.DB(mongo.Database).C("dviEvents").DropCollection()
+	session.DB(mongo.Database).C("dviLocations").DropCollection()
+}
 
-	user := &mgo.User{
-		Username: mongo.Username,
-		Password: mongo.Password,
-		Roles:    []mgo.Role{},
-	}
-	err = session.DB(mongo.Database).UpsertUser(user)
-	if err != nil {
-		return err
-	}
-	return nil
-} // }}}
-
-func (mongo *MongoDB) Drop() (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-	err = session.DB(mongo.Database).DropDatabase()
-	return err
-} // }}}
-
-func (mongo *MongoDB) Init() (err error) { // {{{
-	/* ====================
-	   Index params:
-	   Unique: causes MongoDB to reject all documents that contain a duplicate value
-	   Background:
-	   TTL: expire data after a period of time.
-	   ==================== */
-
-	err = mongo.Drop()
-	if err != nil {
-		fmt.Printf("\n drop database error: %v\n", err)
-	}
-
-	err = mongo.UpsertDefaultUser()
-	if err != nil {
-		return err
-	}
+func (mongo *mongoDB) init() (err error) {
+	mongo.drop()
 
 	session := mongo.Session.Clone()
 	defer session.Close()
@@ -127,7 +89,7 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	// ========== events
 	collection = session.DB(mongo.Database).C("dviEvents")
 	index = mgo.Index{
-		Key:        []string{"name", "text", "users"},
+		Key:        []string{"name", "text", "users", "timestamp"},
 		Unique:     false,
 		Background: true,
 		Sparse:     true,
@@ -138,14 +100,14 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	}
 	index = mgo.Index{
 		Key:         []string{"ttl"},
-		ExpireAfter: time.Duration(1) * time.Second,
+		ExpireAfter: time.Duration(30) * time.Second,
 	}
 	err = collection.EnsureIndex(index)
 	if err != nil {
 		return err
 	}
 
-	// ========== Locs
+	// ========== locations
 	collection = session.DB(mongo.Database).C("dviLocations")
 	index = mgo.Index{
 		Key:  []string{"$2dsphere:location"},
@@ -157,233 +119,189 @@ func (mongo *MongoDB) Init() (err error) { // {{{
 	}
 
 	return nil
-} // }}}
-
-func (mongo *MongoDB) FillRnd(num int) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-	userRefs := new([]mgo.DBRef)
-	userRef := &mgo.DBRef{}
-	user := User{}
-	point := GeoLocation{}
-
-	lim := 2
-	for i := 0; i < num; i++ {
-		user.SetRnd()
-		point.SetRnd()
-		userRef.Id = user.Id
-		point.Id = user.Id
-		point.TObject = "User"
-		if i < lim {
-			userRef.Collection = "dviUsers"
-			*userRefs = append(*userRefs, *userRef)
-		}
-		err = session.DB(mongo.Database).C("dviUsers").Insert(&user)
-		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
-		if err != nil {
-			return err
-		}
-	}
-
-	event := Event{}
-	for i := 0; i < num; i++ {
-		event.SetRnd()
-		point.SetRnd()
-		point.Id = event.Id
-		point.TObject = "Event"
-		event.Users = *userRefs
-		err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
-		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
-		if err != nil {
-			return err
-		}
-	}
-	return err
-} // }}}
+}
 
 // ========== user
 
-func (mongo *MongoDB) GetUsers() (users []User, err error) { // {{{
+func (mongo *mongoDB) getUsers() (users []geoUser, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviUsers").Find(bson.M{}).All(&users)
 	return users, err
-} // }}}
+}
 
-func (mongo *MongoDB) GetUser(user *User) (guser User, err error) { // {{{
+func (mongo *mongoDB) getUser(u *geoUser) (gu geoUser, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if user.Email != "" {
+	if u.Email != "" {
 		err = session.DB(mongo.Database).C("dviUsers").Find(bson.M{
-			"email": user.Email,
-		}).One(&user)
-		return guser, err
-	}
-	if user.Id.Hex() != "" {
+			"email": u.Email,
+		}).One(&gu)
+	} else if u.ID.Hex() != "" {
 		err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{
-			"_id": user.Id,
-		}).One(&guser)
-		return guser, err
+			"_id": u.ID,
+		}).One(&gu)
 	}
-	return guser, err
-} // }}}
+	return gu, err
+}
 
-func (mongo *MongoDB) PostUser(user *User) (err error) { // {{{
+func (mongo *mongoDB) postUser(user *geoUser) (err error) {
 	session := mongo.Session.Clone()
 
 	defer session.Close()
-	user.Id = bson.NewObjectId()
+	user.ID = bson.NewObjectId()
 
 	err = session.DB(mongo.Database).C("dviUsers").Insert(&user)
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) UpdateUser(user *User) (err error) { // {{{
+func (mongo *mongoDB) updateUser(u *geoUser) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	err = session.DB(mongo.Database).C("dviUsers").Update(
-		bson.M{"_id": user.Id}, &user)
+	err = session.DB(mongo.Database).C("dviUsers").
+		Update(bson.M{"_id": u.ID}, &u)
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) DelUser(user *User) (err error) { // {{{
+func (mongo *mongoDB) delUser(u *geoUser) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if user.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviUsers").RemoveId(user.Id)
+	if u.ID.Hex() != "" {
+		err = session.DB(mongo.Database).C("dviUsers").RemoveId(u.ID)
 		return err
 	}
 	return err
-} // }}}
+}
 
 // ========== event
 
-func (mongo *MongoDB) GetEvents() (events []Event, err error) { // {{{
+func (mongo *mongoDB) getEvents() (events []geoEvent, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{}).All(&events)
 	return events, err
-} // }}}
+}
 
-func (mongo *MongoDB) GetEvent(event *Event) (gevent Event, err error) { // {{{
+func (mongo *mongoDB) getEvent(event *geoEvent) (gevent geoEvent, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if event.Id.Hex() != "" {
+	if event.ID.Hex() != "" {
 		err = session.DB(mongo.Database).C("dviEvents").Find(bson.M{
-			"_id": event.Id,
+			"_id": event.ID,
 		}).One(&gevent)
 	}
 	return gevent, err
-} // }}}
+}
 
-func (mongo *MongoDB) PostEvents(events *[]Event) (err error) { // {{{
+func (mongo *mongoDB) postEvents(events *[]geoEvent) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	for _, event := range *events {
-		event.Id = bson.NewObjectId()
+		event.ID = bson.NewObjectId()
 		err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
 	}
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) PostEvent(event *Event) (err error) { // {{{
+func (mongo *mongoDB) postEvent(event *geoEvent) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	event.Id = bson.NewObjectId()
+	event.ID = bson.NewObjectId()
 	err = session.DB(mongo.Database).C("dviEvents").Insert(&event)
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) UpdateEvent(event *Event) (err error) { // {{{
+func (mongo *mongoDB) updateEvent(event *geoEvent) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviEvents").Update(
-		bson.M{"_id": event.Id}, &event)
+		bson.M{"_id": event.ID}, &event)
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) DelEvent(event *Event) (err error) { // {{{
+func (mongo *mongoDB) delEvent(event *geoEvent) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if event.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviEvents").RemoveId(event.Id)
-		return err
+	if event.ID.Hex() != "" {
+		err = session.DB(mongo.Database).C("dviEvents").RemoveId(event.ID)
 	}
 	return err
-} // }}}
+}
 
 // ========== point
 
-func (mongo *MongoDB) GetLocs() (locs []GeoLocation, err error) { // {{{
+func (mongo *mongoDB) getLocs() (locs []geoLocation, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{}).All(&locs)
 	return locs, err
-} // }}}
+}
 
-func (mongo *MongoDB) GetLoc(point *GeoLocation) (gpoint GeoLocation, err error) { // {{{
+func (mongo *mongoDB) getLoc(point *geoLocation) (gpoint geoLocation, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if point.Id.Hex() != "" {
-		err = session.DB(mongo.Database).C("dviLocations").Find(bson.M{"_id": point.Id}).One(&gpoint)
+	if point.ID.Hex() != "" {
+		err = session.DB(mongo.Database).C("dviLocations").Find(
+			bson.M{"_id": point.ID},
+		).One(&gpoint)
 		return gpoint, err
 	}
 	return gpoint, err
-} // }}}
+}
 
-func (mongo *MongoDB) PostLoc(point *GeoLocation) (gpoint *GeoLocation, err error) { // {{{
+func (mongo *mongoDB) postLoc(point *geoLocation) (gpoint *geoLocation, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	point.Id = bson.NewObjectId()
+	point.ID = bson.NewObjectId()
 	err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 	return point, err
-} // }}}
+}
 
-func (mongo *MongoDB) PostLocs(locs *[]GeoLocation) (err error) { // {{{
+func (mongo *mongoDB) postLocs(locs *[]geoLocation) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	for _, point := range *locs {
-		point.Id = bson.NewObjectId()
+		point.ID = bson.NewObjectId()
 		err = session.DB(mongo.Database).C("dviLocations").Insert(&point)
 	}
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) UpdateLoc(point *GeoLocation) (err error) { // {{{
+func (mongo *mongoDB) updateLoc(point *geoLocation) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
 	err = session.DB(mongo.Database).C("dviLocations").Update(
-		bson.M{"_id": point.Id}, &point)
+		bson.M{"_id": point.ID}, &point)
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) DelLoc(point *GeoLocation) (err error) { // {{{
+func (mongo *mongoDB) delLoc(point *geoLocation) (err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	if point.Id.Hex() != "" {
-		fmt.Println(point.Id)
-		err = session.DB(mongo.Database).C("dviLocations").RemoveId(point.Id)
+	if point.ID.Hex() != "" {
+		fmt.Println(point.ID)
+		err = session.DB(mongo.Database).C("dviLocations").RemoveId(point.ID)
 	}
 	return err
-} // }}}
+}
 
-func (mongo *MongoDB) GetNearLoc(near *ReqNear) (locs []GeoLocation, err error) { // {{{
+func (mongo *mongoDB) getNearLoc(near *reqNear) (locs []geoLocation, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
@@ -400,25 +318,24 @@ func (mongo *MongoDB) GetNearLoc(near *ReqNear) (locs []GeoLocation, err error) 
 	}).All(&locs)
 
 	return locs, err
-} // }}}
+}
 
 // ========== geoloc+event
 
-func (mongo *MongoDB) PostGeoEvent(geoevent *ReqGeoEvent) (res RespondID, err error) { // {{{
+func (mongo *mongoDB) postGeoEvent(gv *reqGeoEvent) (res respondID, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
-	res.Id = bson.NewObjectId()
-	geoevent.Event.Id = res.Id
-	geoevent.GeoLoc.Id = res.Id
+	res.ID = bson.NewObjectId()
+	gv.Event.ID = res.ID
+	gv.GeoLoc.ID = res.ID
 
-	err = session.DB(mongo.Database).C("dviLocations").Insert(&geoevent.GeoLoc)
-	err = session.DB(mongo.Database).C("dviEvent").Insert(&geoevent.Event)
+	err = session.DB(mongo.Database).C("dviLocations").Insert(&gv.GeoLoc)
+	err = session.DB(mongo.Database).C("dviEvents").Insert(&gv.Event)
 	return res, err
-} // }}}
+}
 
-func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err error) {
-	fmt.Println(filter)
+func (mongo *mongoDB) getFiltered(filter *reqFilter) (elocs []eventLoc, err error) {
 	session := mongo.Session.Clone()
 	defer session.Close()
 
@@ -447,7 +364,6 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 	}
 
 	if filter.TObject == "Event" {
-		//{{{
 		params = append(params, bson.M{
 			"$lookup": bson.M{
 				"from":         "dviEvents",
@@ -458,7 +374,7 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 		})
 		params = append(params, bson.M{
 			"$unwind": bson.M{
-				"path": "$Events",
+				"path":                       "$Events",
 				"preserveNullAndEmptyArrays": true,
 			},
 		})
@@ -472,10 +388,10 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 		}
 		// Recently, Today, Yesterday, Week, Month
 		if filter.TTime != "" && filter.TTime != "Any" {
-			date_start, date_end := wordToDate(filter.TTime)
+			dateStart, dateEnd := wordToDate(filter.TTime)
 			params = append(params, bson.M{
 				"$match": bson.M{
-					"Events.timestamp": bson.M{"$gt": date_start, "$lt": date_end},
+					"Events.timestamp": bson.M{"$gt": dateStart, "$lt": dateEnd},
 				},
 			})
 		}
@@ -490,9 +406,7 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 				"location":  1,
 			},
 		})
-		//}}}
 	} else if filter.TObject == "User" {
-		// {{{
 		params = append(params, bson.M{
 			"$lookup": bson.M{
 				"from":         "dviUsers",
@@ -503,7 +417,7 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 		})
 		params = append(params, bson.M{
 			"$unwind": bson.M{
-				"path": "$Users",
+				"path":                       "$Users",
 				"preserveNullAndEmptyArrays": true,
 			},
 		})
@@ -517,73 +431,58 @@ func (mongo *MongoDB) GetFiltered(filter *ReqFilter) (elocs []EventLoc, err erro
 		}
 		params = append(params, bson.M{
 			"$project": bson.M{
-				"_id":      1,
-				"name":     "$Users.name",
-				"tags":     "$Users.tags",
-				"text":     "$Users.text",
-				"tobject":  1,
-				"location": 1,
+				"_id":       1,
+				"name":      "$Users.name",
+				"tags":      "$Users.tags",
+				"text":      "$Users.text",
+				"tobject":   1,
+				"timestamp": 1,
+				"location":  1,
 			},
 		})
-		//}}}
 	}
 
 	err = session.DB(mongo.Database).C("dviLocations").Pipe(params).All(&elocs)
-	fmt.Println(elocs)
 	return elocs, err
 }
 
-func wordToDate(ttime string) (date_start time.Time, date_end time.Time) { // {{{
+func wordToDate(ttime string) (dateStart time.Time, dateEnd time.Time) {
 	today := time.Now()
-	date_start = time.Time{}
-	date_end = today
+	dateStart = time.Time{}
+	dateEnd = today
 	switch ttime {
 	case "Recently":
-		date_start = today.Add(-4 * time.Hour)
-		date_end = today
+		dateStart = today.Add(-4 * time.Hour)
+		dateEnd = today
 	case "Today":
 		year, month, day := today.Date()
-		date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-		date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
+		dateStart = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		dateEnd = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
 	case "Yesterday":
 		today = today.Add(-24 * time.Hour)
 		year, month, day := today.Date()
-		date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-		date_end = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
+		dateStart = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		dateEnd = time.Date(year, month, day, 24, 0, 0, 0, today.Location())
 	case "Week":
 		year, month, day := today.Date()
-		date_start = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-		date_end = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
-		for date_start.Weekday() != time.Monday {
-			date_start = date_start.AddDate(0, 0, -1)
+		dateStart = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		dateEnd = time.Date(year, month, day, 0, 0, 0, 0, today.Location())
+		for dateStart.Weekday() != time.Monday {
+			dateStart = dateStart.AddDate(0, 0, -1)
 		}
-		for date_end.Weekday() != time.Sunday {
-			date_end = date_end.AddDate(0, 0, 1)
+		for dateEnd.Weekday() != time.Sunday {
+			dateEnd = dateEnd.AddDate(0, 0, 1)
 		}
-		date_end = date_end.Add(24 * time.Hour)
+		dateEnd = dateEnd.Add(24 * time.Hour)
 	case "Month":
 		year, month, _ := today.Date()
-		date_start = time.Date(year, month, 1, 0, 0, 0, 0, today.Location())
-		date_end = time.Date(year, month, 32, 0, 0, 0, 0, today.Location())
-		reg_month := date_end.Month()
-		for date_end.Month() == reg_month {
-			date_end = date_end.AddDate(0, 0, -1)
+		dateStart = time.Date(year, month, 1, 0, 0, 0, 0, today.Location())
+		dateEnd = time.Date(year, month, 32, 0, 0, 0, 0, today.Location())
+		regMonth := dateEnd.Month()
+		for dateEnd.Month() == regMonth {
+			dateEnd = dateEnd.AddDate(0, 0, -1)
 		}
-		date_end = date_end.AddDate(0, 0, 1)
+		dateEnd = dateEnd.AddDate(0, 0, 1)
 	}
-	return date_start, date_end
-} // }}}
-
-// ========== geostate
-
-func (mongo *MongoDB) UpdateGeoState(geost *GeoState) (err error) { // {{{
-	session := mongo.Session.Clone()
-	defer session.Close()
-
-	for _, point := range geost.Locations {
-		err = session.DB(mongo.Database).C("dviLocations").Update(
-			bson.M{"_id": point.Id}, &point)
-	}
-
-	return err
-} // }}}
+	return dateStart, dateEnd
+}

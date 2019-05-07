@@ -1,72 +1,44 @@
 package main
 
 import (
-	"fmt"
+	"flag"
+	"log"
 	"os"
-
-	ct "map.geoloc/backend/controller"
 )
+
+type flags struct {
+	start *string
+}
 
 func main() {
 	// processing console arguments
-	args := os.Args
-	if len(args) > 1 && args[1] == "start" {
-		start(args)
-	} else if len(args) > 1 && args[1] == "help" {
-		printFullHelp()
-	} else {
-		incorrectCommand()
-	}
-}
+	fs := flags{}
+	fs.start = flag.String("start", "geoloc", "start geoloc service")
+	flag.Parse()
 
-func incorrectCommand() {
-	fmt.Println("---------------")
-	fmt.Println("ERROR")
-	fmt.Println("Incorrect command")
-	fmt.Println("For help run \"./backend help\"")
-	fmt.Println("---------------")
-}
-
-func printFullHelp() {
-	//
-	fmt.Println("========================================")
-	fmt.Println("arguments for start:")
-	fmt.Println("========================================")
-	fmt.Println("start init - full init db")
-	fmt.Println("be wary, old data will be dropped")
-	fmt.Println("====================")
-	fmt.Println("start geoloc - geolocation server")
-	fmt.Println("====================")
-	fmt.Println("start geoloc 8081 localhost conf/clientid.google.json ./public")
-	fmt.Println("====================")
-	fmt.Println("start chat - chat hub")
-	fmt.Println("====================")
-	fmt.Println("start std - start all std services with default parameters")
-	fmt.Println("========================================")
-}
-
-func start(args []string) {
-	switch args[2] {
-	case "std":
-		ct.Start(args)
+	switch *fs.start {
 	case "geoloc":
-		ct.Start(args)
-	case "init":
-		err := ct.InitDB()
-		if err != nil {
-			fmt.Printf("\nsomething wrong with init database: %v\n", err)
-		} else {
-			fmt.Println("====================")
-			fmt.Println("init db successful complete.")
-			fmt.Println("====================")
-		}
+		m := mongoDB{}
+		m.setDefault()
+		port := os.Getenv("SERVER_PORT")
 
-	// case "chat":
-	// ct.StartChat(args)
-	default:
-		fmt.Println("---------------")
-		fmt.Println("ERROR")
-		fmt.Println("Incorrect command")
-		fmt.Println("---------------")
+		o2 := getOauth2()
+		router := router(&m, &o2)
+		router.Run(":" + port)
+	case "init":
+		err := initDB()
+		if err != nil {
+			log.Fatal(err)
+		} else {
+			log.Println("init db successful complete")
+		}
 	}
+}
+
+func initDB() (err error) {
+	mongo := mongoDB{}
+	mongo.setDefault()
+	defer mongo.Session.Close()
+	err = mongo.init()
+	return err
 }
