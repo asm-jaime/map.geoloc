@@ -12,11 +12,6 @@ import (
 )
 
 func setTestEnv() {
-	os.Setenv(
-		"CID",
-		"295529031882-ap6njd8e8p0bmggmvkb7t0iflhcetjn1.apps.googleusercontent.com",
-	)
-	os.Setenv("CSECRET", "ICiVhKO51UxbNfIQVR7WudxH")
 	os.Setenv("HOST", "localhost")
 	os.Setenv("PORT", "8000")
 }
@@ -36,8 +31,7 @@ func TestRouter(t *testing.T) {
 		t.Error("db err: ", err)
 	}
 	setTestEnv()
-	o2 := getOauth2()
-	testRouter := router(db, &o2)
+	testRouter := router(db)
 
 	// post/get points
 	{

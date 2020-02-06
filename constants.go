@@ -1,5 +1,5 @@
 package main
 
 const (
-	STATIC_FOLDER = "view/public"
+	STATIC_FOLDER = "./view/build"
 )

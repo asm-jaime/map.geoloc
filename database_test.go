@@ -213,6 +213,7 @@ func TestFilterEventLoc(t *testing.T) {
 		elocs, err := db.getFiltered(&req)
 		if err != nil || len(elocs) == 0 {
 			t.Error("err getFiltered: ", err)
+			return
 		}
 		log.Println(elocs[0])
 		assert.Equal(t, time.Now().Day(), elocs[0].Timestamp.Day(), "day does not match")

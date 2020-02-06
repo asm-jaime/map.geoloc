@@ -39,7 +39,7 @@ func (mongo *mongoDB) setDefault() {
 
 	mongo.Info = &mgo.DialInfo{
 		Addrs:    []string{mongo.Addrs},
-		Timeout:  2 * time.Hour,
+		Timeout:  10 * time.Second,
 		Database: mongo.Database,
 		Username: mongo.Username,
 		Password: mongo.Password,

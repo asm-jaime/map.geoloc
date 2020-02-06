@@ -20,11 +20,8 @@ func main() {
 	case "geoloc":
 		m := mongoDB{}
 		m.setDefault()
-		port := os.Getenv("SERVER_PORT")
 
-		o2 := getOauth2()
-		router := router(&m, &o2)
-		router.Run(":" + port)
+		router(&m).Run(":" + os.Getenv("PORT"))
 	case "init":
 		err := initDB()
 		if err != nil {
